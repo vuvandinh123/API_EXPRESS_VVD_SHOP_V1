@@ -1,0 +1,15 @@
+[debug] [2024-03-28T13:30:35.677Z] ----------------------------------------------------------------------
+[debug] [2024-03-28T13:30:35.678Z] Command:       /usr/local/bin/firebase /home/vuvandinh203/.cache/firebase/tools/lib/node_modules/firebase-tools/lib/bin/firebase experiments:enable webframeworks
+[debug] [2024-03-28T13:30:35.678Z] CLI Version:   13.6.0
+[debug] [2024-03-28T13:30:35.679Z] Platform:      linux
+[debug] [2024-03-28T13:30:35.679Z] Node Version:  v18.5.0
+[debug] [2024-03-28T13:30:35.679Z] Time:          Thu Mar 28 2024 20:30:35 GMT+0700 (Indochina Time)
+[debug] [2024-03-28T13:30:35.679Z] ----------------------------------------------------------------------
+[debug] 
+[info] Enabled experiment webframeworks
+[debug] [2024-03-28T13:30:45.301Z] Error: Timed out.
+    at Timeout.<anonymous> (/home/vuvandinh203/.cache/firebase/tools/lib/node_modules/firebase-tools/lib/utils.js:258:49)
+    at listOnTimeout (node:internal/timers:564:17)
+    at process.processTimers (node:internal/timers:507:7)
+[error] 
+[error] Error: An unexpected error has occurred.
