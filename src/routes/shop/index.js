@@ -5,6 +5,7 @@ const checkAuthencation = require('../../middlewares/checkAuthencation.js');
 const router = express.Router();
 
 router.use('/', require('./auth.js'))
+router.use(checkAuthencation)
 router.use(auth.checkShop)
 router.use('/', require('./product.js'))
 router.use('/', require('./brand.js'))

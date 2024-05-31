@@ -5,7 +5,7 @@ const asyncHandler = require('../../middlewares/asyncHandle');
 
 const multer = require('multer');
 const UploadController = require('../../controllers/upload.controller');
-const XLSXToJson = require('../../controllers/xlsx.controller');
+const XLSXToJson = require('../../controllers/validate.controller');
 const router = express.Router();
 const upload = multer({
     storage: multer.memoryStorage(),

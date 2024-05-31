@@ -1,4 +1,9 @@
 module.exports = {
+
+
+    ERROR_EXITES:601,
+
+
     /**
      * Official Documentation @ https://tools.ietf.org/html/rfc7231#section-6.2.1
      *

@@ -29,7 +29,9 @@ class ShopRepository {
         ).where("shops.user_id", userId).join("users", "users.id", "shops.user_id").
             groupBy("shops.id", "users.email", "users.firstName", "users.lastName").first()
     }
-
+    static async findUserByUsername(username) {
+        return await knex.from("shops").where({ username }).first()
+    }
     static async createShop(data, userId) {
         const newShop = {
             name: data.shop_name,
@@ -44,10 +46,14 @@ class ShopRepository {
             cccd: data.shop_cccd,
             user_id: userId,
             logo: data.shop_logo,
+            is_active: 0,
             status: "pending",
         }
 
         return await knex("shops").insert(newShop)
+    }
+    static async verifyEmailRegisterShop(email) {
+        return await knex("users").where({ email }).update({ email_verified: 1 })
     }
     // user
     static async getShopById(shopId) {

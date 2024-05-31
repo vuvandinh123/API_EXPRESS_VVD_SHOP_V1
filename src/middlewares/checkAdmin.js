@@ -21,8 +21,8 @@ const checkAdmin = asyncHandler(async (req, res, next) => {
     next()
 })
 const checkShop = asyncHandler(async (req, res, next) => {
-    const user = await UserRepository.checkRoleUserId(req.user.id)
-    const isShop = Number(user.permissions[0]);
+    const user = await UserRepository.checkRoleUserId(req.user?.id || 0)
+    const isShop = Number(user?.permissions[0]);
     if (isShop !== 2) {
         throw new ForbiddenError("You are not shop")
     }

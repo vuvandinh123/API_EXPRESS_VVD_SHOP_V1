@@ -198,7 +198,6 @@ class AccessService {
         const cacheCode = cache.get(email)
         if (cacheCode === token) {
             const passwordHast = await bcrypt.hash(newPassword, 10)
-            console.log(passwordHast);
             await UserRepository.patchPasswordUser({ email, password: passwordHast })
             cache.del(email)
             return true

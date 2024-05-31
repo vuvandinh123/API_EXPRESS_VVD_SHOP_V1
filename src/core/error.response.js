@@ -31,10 +31,16 @@ class ForbiddenError extends ErrorResponse {
         super(message, status)
     }
 }
+class ExitsError extends ErrorResponse {
+    constructor(message = ReasonPhrases.ERROR_EXITES, status = StatusCodes.ERROR_EXITES) {
+        super(message, status)
+    }
+}
 module.exports = {
     ConfilictRequestError,
     BadRequestError,
     AuthFailureError,
     NotFoundError,
-    ForbiddenError
+    ForbiddenError,
+    ExitsError
 }

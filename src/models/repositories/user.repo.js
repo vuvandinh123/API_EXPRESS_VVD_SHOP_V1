@@ -15,6 +15,7 @@ class UserRepository {
         return await knex("users").insert({ firstName, lastName, email, type_login, password, role_id, image, email_verified,is_active, created_at: new Date() })
     }
     static async checkRoleUserId(userId) {
+        console.log(userId);
         const user = await knex.from("users").select("users.id", "users.email", "users.firstName", "users.lastName", "roles.name as role", "roles.permissions").join("roles", "users.role_id", "roles.id").where("users.id", userId).first()
         return user
     }

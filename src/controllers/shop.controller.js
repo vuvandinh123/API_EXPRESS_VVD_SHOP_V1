@@ -1,7 +1,7 @@
 "use strict"
 
 const ShopService = require("../service/shop.service")
-const { OK } = require("../core/success.response")
+const { OK, CREATED } = require("../core/success.response")
 class ShopController {
     static async getShopById(req, res) {
         const shopId = req.params.shopId
@@ -40,11 +40,18 @@ class ShopController {
     static async createShop(req, res) {
         const data = req.body
         const shop = await ShopService.createShop(data)
-        new OK({
+        new CREATED({
             message: "Create shop successfully",
             data: shop
         }).send(res)
     }
-
+    static async verifyEmailRegisterShop(req, res) {
+        const { email, token } = req.body
+        const shop = await ShopService.verifyEmailRegisterShop({ email, token })
+        new OK({
+            message: "Verify email successfully",
+            data: shop
+        }).send(res)
+    }
 }
 module.exports = ShopController
