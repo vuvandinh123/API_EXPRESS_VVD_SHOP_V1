@@ -41,7 +41,7 @@ class InventoryLogService {
           throw new BadRequestError(`Product with id ${item.product_id} not found`)
         }
         const newQty = Number(isProduct.quantity) + Number(item.quantity);
-        const update = await ProductRepository.patchProductQuantity(item.product_id, newQty)
+        await ProductRepository.patchProductQuantity(item.product_id, newQty)
 
         const amount = Number(item.import_price) * Number(item.quantity)
         if (item.variant?.code) {
@@ -76,8 +76,11 @@ class InventoryLogService {
       }
     }
   }
-  static async getAllInventoryLog({ limit, offset, month }, user) {
-    return InventoryLogRepository.getAllInventoryLog({ limit, offset, month }, user);
+  static async getAllInventoryLog({ limit, offset, month }, user,type) {
+    return InventoryLogRepository.getAllInventoryLog({ limit, offset, month }, user,type);
+  }
+  static async getAllOutInventoryLog({ limit, offset, month }, user) {
+    return InventoryLogRepository.getAllInventoryLog({ limit, offset, month }, user, "OUT");
   }
   static async getVariantFirebaseById(id) {
     const variantDoc = await InventoryLogRepository.getVariantFirebaseById(id);
@@ -106,8 +109,11 @@ class InventoryLogService {
   static async getInventoryLogById(id,user) {
     return InventoryLogRepository.getInventoryLogById(id,user);
   }
-  static async getTotalAmountInventoryLog(user) {
-    return InventoryLogRepository.getTotalAmountInventoryLog(user);
+  static async getTotalAmountInventoryLog(type,user) {
+    return InventoryLogRepository.getTotalAmountInventoryLog(type,user);
+  }
+  static async getInventoryStats(userId,compareWith = 'week') {
+    return InventoryLogRepository.getInventoryStats(userId, compareWith);
   }
 }
 module.exports = InventoryLogService;

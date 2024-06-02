@@ -9,6 +9,7 @@ router.post('/inventory-logs', asyncHandler(InventoryLogController.createInvento
 router.get('/variant-id/:productId', asyncHandler(InventoryLogController.getVariantFirebaseById))
 router.get('/inventory-logs', asyncHandler(InventoryLogController.getAllInventoryLog))
 router.get('/inventory-logs/amount', asyncHandler(InventoryLogController.getTotalAmountInventoryLog))
-router.get('/inventory-logs/:id', asyncHandler(InventoryLogController.getInventoryLogById))
+router.get('/inventory-logs/stats', asyncHandler(InventoryLogController.getInventoryStats))
 
+router.get('/inventory-logs/:id', asyncHandler(InventoryLogController.getInventoryLogById))
 module.exports = router
