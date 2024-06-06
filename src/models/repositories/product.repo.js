@@ -44,28 +44,37 @@ class ProductRepository {
                 "products.slug",
                 "products.sold",
                 "products.price",
-                "products.price_sale",
                 "products.shop_id",
                 "products.is_active",
                 "products.created_at",
                 "products.type",
                 "products.thumbnail",
                 "products.quantity",
+                "promotions.price_sale",
+                "promotions.type_price",
+                "promotions.end_date",
+                "favourite_items.id as isFav",
                 knex.raw("GROUP_CONCAT(product_images.image_path) as imageUrls"),
+
             ])
             .from("products")
             .leftJoin("product_images", "products.id", "product_images.product_id")
-            .groupBy("products.id")
+            .leftJoin("promotions", "products.id", "promotions.product_id")
+            .leftJoin("favourite_items", "products.id", "favourite_items.product_id")
+            .groupBy("products.id", "promotions.price_sale", "promotions.type_price", "promotions.end_date","isFav")
         return products
     }
     // user
     static async getDailyDiscoverProducts() {
-        const response = await ProductRepository.getProducts().where('products.is_active', 1).orderBy('products.sold', 'desc').limit(8);
+        const response = await ProductRepository.getProducts().where('products.is_active', 2).orderBy('products.sold', 'desc').where("products.is_delete", 0).limit(12);
         return response
     }
     static async getHotSaleProducts() {
-        const response = await ProductRepository.getProducts().where('products.is_active', 1)
-            .where('products.is_sale', 1).orderBy('products.created_at', 'desc').limit(12);
+        const response = await ProductRepository.getProducts().where('products.is_active', 2)
+            .whereNotNull("promotions.price_sale")
+            .where("promotions.start_date", "<=", knex.fn.now())
+            .where("promotions.end_date", ">=", knex.fn.now())
+            .orderBy('products.created_at', 'desc').limit(12);
         return response
     }
     // shop
@@ -208,7 +217,6 @@ class ProductRepository {
                 "products.price",
                 "products.shop_id",
                 "products.details",
-                "products.is_sale",
                 "products.rating",
                 "products.meta_title",
                 "products.meta_description",

@@ -65,10 +65,11 @@ class ShopRepository {
             "users.firstName as firstName",
             "users.lastName as lastName",
             knex.raw(
-                `(select count(id) from products where shop_id = shops.id and is_active = 1 and is_delete = 0) as total_product`
+                `(select count(id) from products where shop_id = shops.id and is_active = 2 and is_delete = 0) as total_product`
             )
-        ).where("shops.id", shopId).join("users", "users.id", "shops.user_id").
-            groupBy("shops.id", "users.email", "users.firstName", "users.lastName").first()
+        )
+        .where("shops.user_id", shopId).join("users", "users.id", "shops.user_id")
+        .groupBy("shops.id", "users.email", "users.firstName", "users.lastName").first()
     }
     static async getIsFollowShop({ shopId, userId }) {
         const isFollowing = await knex.from("follows").where({ shop_id: shopId, user_id: userId }).first()

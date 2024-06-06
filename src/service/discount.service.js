@@ -20,9 +20,11 @@ class DiscountService {
     static async getAllDiscountCodeByProductId({ productId, shopId }) {
         return await DiscountRepository.getAllDiscountCodeByProductId({ productId, shopId })
     }
-    static async usedCodeAndVerify({ code, shop_id, product_id, price }, user) {
-
-        const discount = await DiscountRepository.getDiscountByCode(code)
+    static async getAllDiscountCodeTypeAll({ shopId }) {
+        return await DiscountRepository.getAllDiscountCodeTypeAll({ shopId })
+    }
+    static async usedCodeAndVerify({ code, shop_id }, user) {
+        const discount = await DiscountRepository.getDiscountByCode(code, shop_id)
         let historyUsed = discount?.history
         let usedUser = {
             isUser: false,
@@ -48,15 +50,21 @@ class DiscountService {
             throw new BadRequestError("Discount code is not active")
         }
         if (discount.applies_to == "all") {
-
-            return await caculatorDiscount({ user, discount, price, usedUser, historyUsed })
+            return {
+                value: discount.value,
+                type_price: discount.type_price,
+                applies_to: discount.applies_to
+            }
         }
         else {
-            const discountProduct = await DiscountRepository.checkDiscountProduct({ discountId: discount.id, productId: product_id })
-            if (!discountProduct) {
-                throw new BadRequestError("Discount code not found")
+            const discountProduct = await DiscountRepository.checkDiscountProduct({ discountId: discount.id })
+            const productIds = discountProduct.map(item => item.product_id)
+            return {
+                value: discount.value,
+                type_price: discount.type_price,
+                applies_to: discount.applies_to,
+                productIds
             }
-            return await caculatorDiscount({ user, discount, price, usedUser, historyUsed })
         }
     }
     static async removeVoucherCode({ code, shop_id, product_id, price }, user) {

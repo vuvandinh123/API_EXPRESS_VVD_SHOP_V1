@@ -5,10 +5,12 @@ const asyncHandler = require('../../middlewares/asyncHandle');
 const router = express.Router();
 router.post('/check-email-exits', asyncHandler(ValidateController.checkEmailExits))
 
-router.use('/', require('./product'))
-router.use('/', require('./access'))
-router.use('/', require('./discount'))
-router.use('/', require('./shop'))
+router.use('/products', require('./product'))
+router.use('/discounts', require('./discount'))
+router.use('/shops', require('./shop'))
+router.use('/carts',require('./cart'))
+router.use('/favourites',require('./favourite'))
+router.use('/auth', require('./access'))
 
 
 

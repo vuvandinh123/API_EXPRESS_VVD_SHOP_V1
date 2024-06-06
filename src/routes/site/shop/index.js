@@ -7,8 +7,8 @@ const ShopController = require('../../../controllers/shop.controller');
 const checkAuthencation = require('../../../middlewares/checkAuthencation');
 
 // get
-router.get('/shops/:shopId', asyncHandler(ShopController.getShopById))
+router.get('/:shopId', asyncHandler(ShopController.getShopById))
 router.use(checkAuthencation)
-router.patch('/shops/follow/:shopId', asyncHandler(ShopController.toggleFollowShop))
-router.get('/shops/is-follow/:shopId', asyncHandler(ShopController.getIsFollowShop))
+router.get('/is-follow/:shopId', asyncHandler(ShopController.getIsFollowShop))
+router.patch('/follow/:shopId', asyncHandler(ShopController.toggleFollowShop))
 module.exports = router

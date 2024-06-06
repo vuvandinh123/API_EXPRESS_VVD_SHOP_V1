@@ -16,9 +16,17 @@ class DiscountController {
             data,
         }).send(res)
     }
+    static getAllDiscountCodeTypeAll = async (req, res) => {
+        const { shopId } = req.params
+        const data = await DiscountService.getAllDiscountCodeTypeAll({ shopId })
+        new OK({
+            message: "Get all discount code on shop successfully",
+            data,
+        }).send(res)
+    }
     static async usedCodeAndVerify(req, res) {
-        const { code, shop_id, product_id, price } = req.body
-        const discount = await DiscountService.usedCodeAndVerify({ code, shop_id, product_id, price }, req.user)
+        const { code, shop_id } = req.body
+        const discount = await DiscountService.usedCodeAndVerify({ code, shop_id }, req.user)
         new OK({
             message: "success",
             data: discount

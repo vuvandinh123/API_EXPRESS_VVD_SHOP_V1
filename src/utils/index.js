@@ -131,40 +131,43 @@ const authLoginSocial = async ({ email, firstName, lastName, image, type_login }
 }
 const converProductsToResponse = (products) => {
     products.forEach((row) => {
-        if (row.imageUrls != null) {
+        if (row.imageUrls) {
             row.imageUrls = row.imageUrls.split(",");
         }
         else delete row.imageUrls
         if (row.price_sale) {
-            row.discount = ((row.price - row.price_sale) / row.price * 100).toFixed(0) + "%";
+            const discountedPrice = row.price - row.price_sale
+            row.discount = row.type_price === "fixed_amount" ? (((row.price - discountedPrice) / row.price) * 100) : row.price_sale;
+            row.fix_price = row.price
+            row.price = row.type_price === "fixed_amount" ? (row.price - row.price_sale) : row.price - (row.price * row.price_sale / 100);
         }
     });
     return products;
 }
-const caculatorDiscount = async ({ user, discount, price, usedUser, historyUsed }) => {
-    let amount = 0
-    if (discount.type_price === "fixed_amount") {
-        amount = price - discount.value
-        if (amount < 0) {
-            amount = 0
+const converProductsToResponse2 = (products) => {
+    products.forEach((row) => {
+        if (row.imageUrls) {
+            row.imageUrls = row.imageUrls.split(",");
         }
-
-    } else {
-        amount = price - (price * (discount.value / 100))
-    }
-    if (usedUser.isUser) {
-        if (usedUser.used_count >= discount.max_uses_per_user) {
-            throw new BadRequestError("Discount code is used")
+        else delete row.imageUrls
+        if (row.price_sale) {
+            const discountedPrice = row.price - row.price_sale
+            row.discount = row.type_price === "fixed_amount" ? (((row.price - discountedPrice) / row.price) * 100) : row.price_sale;
+            row.fix_price = row.price
+            row.price = row.type_price === "fixed_amount" ? (row.price - row.price_sale) : row.price - (row.price * row.price_sale / 100);
         }
-        historyUsed[usedUser.index].used_count = usedUser.used_count + 1
-    } else {
-        historyUsed = [
-            {
-                user_id: user.id,
-                used_count: 1,
+        if (row.discount_value) {
+            if (!row.fix_price) {
+                row.fix_price = row.price
             }
-        ]
-    }
+            row.price = row.price - (row.discount_type === "fixed_amount" ? row.discount_value : (row.price * row.discount_value / 100))
+        }
+    });
+    return products;
+}
+const caculatorDiscount = async ({ user, discount, usedUser, historyUsed }) => {
+
+
     await DiscountRepository.patchDiscountUsed({ id: discount.id, history: JSON.stringify(historyUsed) })
     return {
         value: discount.value,
@@ -199,5 +202,6 @@ module.exports = {
     authLoginSocial,
     sendNodemail,
     converProductsToResponse,
+    converProductsToResponse2,
     caculatorDiscount
 }

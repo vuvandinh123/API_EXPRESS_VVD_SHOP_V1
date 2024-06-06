@@ -12,6 +12,17 @@ const { sortDiscount } = require("../../utils/filter");
 class DiscountRepository {
 
     // user
+    static async getAllDiscountCodeTypeAll({ shopId }) {
+        const discount = await knex
+            .select('discounts.*', knex.raw("GROUP_CONCAT(discount_products.product_id) as productIds"))
+            .from('discounts')
+            .where('discounts.shop_id', shopId)
+            .where("discounts.end_date", ">", new Date())
+            .leftJoin('discount_products', 'discounts.id', 'discount_products.discount_id')
+            .orderBy('discounts.created_at', 'desc')
+            .groupBy('discounts.id');
+        return discount
+    }
     static async getAllDiscountCodeByProductId({ productId, shopId }) {
         const discount = await knex
             .select('discounts.*')
@@ -24,21 +35,20 @@ class DiscountRepository {
             .orderBy('discounts.created_at', 'desc');
         return discount
     }
-    static async getDiscountByCode(code) {
+    static async getDiscountByCode(code, shopId) {
         const discount = await knex
             .select('discounts.*')
             .from('discounts')
             .where('discounts.code', code)
+            .where("shop_id", shopId)
             .first()
         return discount
     }
     static async checkDiscountProduct({ discountId, productId }) {
         const discount = await knex
-            .select('discount_products.*')
+            .select('discount_products.product_id')
             .from('discount_products')
             .where('discount_products.discount_id', discountId)
-            .andWhere('discount_products.product_id', productId)
-            .first()
         return discount
     }
     static formathDiscountCode(data, user) {

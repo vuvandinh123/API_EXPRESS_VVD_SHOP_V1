@@ -58,69 +58,72 @@ class InventoryLogRepository {
     return results
   }
   static async getInventoryStats(shopId, compareWith = 'week') {
-    const now = moment();
-    let year = now.year();
-    let month = now.month();
-    let week = now.week();
-    const query = knex('inventory_log')
-      .where('shop_id', shopId)
-      .select(
-        knex.raw('SUM(CASE WHEN type = "IN" THEN total ELSE 0 END) AS totalIncome'),
-        knex.raw('SUM(CASE WHEN type = "OUT" THEN total ELSE 0 END) AS totalExpense')
-      );
-    const queryPrev = knex('inventory_log')
-      .where('shop_id', shopId)
-      .select(
-        knex.raw('SUM(CASE WHEN type = "IN" THEN total ELSE 0 END) AS totalIncome'),
-        knex.raw('SUM(CASE WHEN type = "OUT" THEN total ELSE 0 END) AS totalExpense')
-      );
-    if (compareWith === 'week') {
-      query.whereRaw('YEARWEEK(created_at, 1) = ?', [week]);
-      queryPrev.whereRaw('YEARWEEK(created_at, 1) = ?', [week - 1]);
-    } else if (compareWith === 'month') {
-      query.whereRaw('YEAR(created_at) = ? AND MONTH(created_at) = ?', [year, month + 1]);
-      queryPrev.whereRaw('YEAR(created_at) = ? AND MONTH(created_at) = ?', [year, month]);
-    } else { // year
-      query.whereRaw('YEAR(created_at) = ?', [year]);
-      queryPrev.whereRaw('YEAR(created_at) = ?', [year - 1]);
+    const currentDate = moment();
+    const currentYear = currentDate.year();
+    const currentMonth = currentDate.month();
+    const currentWeek = currentDate.isoWeek();
+
+    const calculateSums = (query) =>
+      query
+        .select(
+          knex.raw('SUM(CASE WHEN type = "IN" THEN total ELSE 0 END) AS totalIncome'),
+          knex.raw('SUM(CASE WHEN type = "OUT" THEN total ELSE 0 END) AS totalExpense')
+        )
+        .first();
+
+    const query = knex('inventory_log').where('shop_id', shopId);
+    const prevQuery = knex('inventory_log').where('shop_id', shopId);
+
+    switch (compareWith) {
+      case 'week':
+        query.whereRaw('WEEK(created_at, 1) = ?', [currentWeek]);
+        prevQuery.whereRaw('WEEK(created_at, 1) = ?', [currentWeek - 1]);
+        break;
+      case 'month':
+        query.whereRaw('YEAR(created_at) = ? AND MONTH(created_at) = ?', [currentYear, currentMonth + 1]);
+        prevQuery.whereRaw('YEAR(created_at) = ? AND MONTH(created_at) = ?', [currentYear, currentMonth]);
+        break;
+      default: // year
+        query.whereRaw('YEAR(created_at) = ?', [currentYear]);
+        prevQuery.whereRaw('YEAR(created_at) = ?', [currentYear - 1]);
     }
 
-    const results = await query;
-    const resultsPrev = await queryPrev;
-    //  tổng sản phẩm trong kho
-    const totalProductIventory = await knex("products").select(knex.raw("SUM(quantity) as total"),knex.raw("SUM(quantity * price) as total_price")).where("shop_id", shopId).where("is_delete", 0);
-    // current
-    const totalIncome = results[0].totalIncome || 0;
-    const totalExpense = results[0].totalExpense || 0;
-    const estimatedProfit = totalExpense - totalIncome
+    const { totalIncome, totalExpense } = await calculateSums(query);
+    const { totalIncome: prevTotalIncome, totalExpense: prevTotalExpense } = await calculateSums(prevQuery);
 
-    // previous
-    const totalIncomePrev = resultsPrev[0].totalIncome
-    const totalExpensePrev = resultsPrev[0].totalExpense
-    const estimatedProfitPrev = totalExpensePrev - totalIncomePrev
+    const totalProductIventory = await knex('products')
+      .where('shop_id', shopId)
+      .where('is_delete', 0)
+      .select(
+        knex.raw('SUM(quantity) as total'),
+        knex.raw('SUM(quantity * price) as total_price')
+      )
+      .first();
 
-    // calculate percent change
-    const totalIncomeChange = this.calculatePercentChange(totalIncome, totalIncomePrev)
-    const totalExpenseChange = this.calculatePercentChange(totalExpense, totalExpensePrev)
-    const estimatedProfitChange = this.calculatePercentChange(estimatedProfit, estimatedProfitPrev)
+    const estimatedProfit = totalExpense - totalIncome;
+    const estimatedProfitPrev = prevTotalExpense - prevTotalIncome;
 
-    const data = {
+    const calculatePercentChange = (currentValue, previousValue) =>
+      previousValue === 0
+        ? currentValue === 0 ? 0 : Infinity
+        : ((currentValue - previousValue) / previousValue) * 100;
+
+    return {
       totalIncome: {
         value: totalIncome,
-        change: totalIncomeChange
+        change: calculatePercentChange(totalIncome, prevTotalIncome)
       },
       totalExpense: {
         value: totalExpense,
-        change: totalExpenseChange
+        change: calculatePercentChange(totalExpense, prevTotalExpense)
       },
       estimatedProfit: {
         value: estimatedProfit,
-        change: estimatedProfitChange
+        change: calculatePercentChange(estimatedProfit, estimatedProfitPrev)
       },
-      totalProductIventory: totalProductIventory[0].total,
-      totalPriceProductIventory: totalProductIventory[0].total_price
-    }
-    return data
+      totalProductIventory: totalProductIventory.total,
+      totalPriceProductIventory: totalProductIventory.total_price
+    };
   }
 
   static calculatePercentChange(currentValue, previousValue) {
