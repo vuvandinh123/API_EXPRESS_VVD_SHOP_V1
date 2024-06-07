@@ -52,6 +52,7 @@ class DiscountService {
         if (discount.applies_to == "all") {
             return {
                 value: discount.value,
+                name: discount.name,
                 type_price: discount.type_price,
                 applies_to: discount.applies_to
             }
@@ -62,6 +63,7 @@ class DiscountService {
             return {
                 value: discount.value,
                 type_price: discount.type_price,
+                name: discount.name,
                 applies_to: discount.applies_to,
                 productIds
             }

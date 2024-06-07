@@ -25,8 +25,6 @@ class CartRepository {
                 "cart_items.is_check",
                 "products.name",
                 "products.price",
-                "discounts.value as discount_value",
-                "discounts.type_price as discount_type",
                 "products.thumbnail",
                 "products.slug",
                 "products.shop_id",
@@ -36,8 +34,7 @@ class CartRepository {
                 "promotions.type_price"
             )
             .orderBy("cart_items.id");
-        const newCartItems = converProductsToResponse2(cartItems)
-
+        const newCartItems = await converProductsToResponse2(cartItems)
         const shopProducts = newCartItems.reduce((acc, item) => {
             const shopId = item.shop_id;
             if (!acc[shopId]) {
@@ -54,8 +51,6 @@ class CartRepository {
                 price_sale: item.price_sale,
                 fix_price: item.fix_price,
                 thumbnail: item.thumbnail,
-                discount_value: item.discount_value,
-                discount_type: item.discount_type,
                 slug: item.slug,
                 is_check: item.is_check,
                 quantity: item.quantity,

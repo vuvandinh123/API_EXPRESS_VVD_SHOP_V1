@@ -8,8 +8,12 @@ router.post('/check-email-exits', asyncHandler(ValidateController.checkEmailExit
 router.use('/products', require('./product'))
 router.use('/discounts', require('./discount'))
 router.use('/shops', require('./shop'))
-router.use('/carts',require('./cart'))
-router.use('/favourites',require('./favourite'))
+router.use('/carts', require('./cart'))
+router.use('/favourites', require('./favourite'))
+router.use('/nations', require('./nation'))
+router.use('/provinces', require('./provinces'))
+router.use('/address-user', require('./userAddressOrder'))
+router.use('/delivery', require('./delivery'))
 router.use('/auth', require('./access'))
 
 

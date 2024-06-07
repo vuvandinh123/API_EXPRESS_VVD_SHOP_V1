@@ -144,12 +144,23 @@ const converProductsToResponse = (products) => {
     });
     return products;
 }
-const converProductsToResponse2 = (products) => {
-    products.forEach((row) => {
-        if (row.imageUrls) {
-            row.imageUrls = row.imageUrls.split(",");
+const converProductsToResponse2 = async (products) => {
+    const listProduct = await Promise.all(products.map(async (row) => {
+        if (row.code) {
+            const variantDoc = await firebase.collection("variant").doc(row.id.toString()).get()
+            if (variantDoc.exists) {
+                try {
+                    const variantData = variantDoc.data();
+                    const productVariantsNew = variantData.productVariants.find((item) => {
+                        return item.code === row.code
+                    })
+                    row.price = productVariantsNew.price
+                } catch (error) {
+                    console.log(error);
+                }
+
+            }
         }
-        else delete row.imageUrls
         if (row.price_sale) {
             const discountedPrice = row.price - row.price_sale
             row.discount = row.type_price === "fixed_amount" ? (((row.price - discountedPrice) / row.price) * 100) : row.price_sale;
@@ -162,8 +173,9 @@ const converProductsToResponse2 = (products) => {
             }
             row.price = row.price - (row.discount_type === "fixed_amount" ? row.discount_value : (row.price * row.discount_value / 100))
         }
-    });
-    return products;
+        return row
+    }))
+    return listProduct;
 }
 const caculatorDiscount = async ({ user, discount, usedUser, historyUsed }) => {
 

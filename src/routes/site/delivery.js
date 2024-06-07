@@ -2,10 +2,10 @@
 
 const express = require('express');
 const asyncHandler = require('../../middlewares/asyncHandle');
-const ValidateController = require('../../controllers/validate.controller');
-
+const DeliveryController = require('../../controllers/delivery.controller');
 const router = express.Router();
 
+router.get('/', asyncHandler(DeliveryController.getAllDelivery))
 
 
 module.exports = router
