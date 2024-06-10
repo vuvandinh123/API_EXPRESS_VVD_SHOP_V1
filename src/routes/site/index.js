@@ -14,6 +14,8 @@ router.use('/nations', require('./nation'))
 router.use('/provinces', require('./provinces'))
 router.use('/address-user', require('./userAddressOrder'))
 router.use('/delivery', require('./delivery'))
+router.use('/orders', require('./order'))
+router.use('/user', require('./user'))
 router.use('/auth', require('./access'))
 
 

@@ -61,7 +61,7 @@ class ProductRepository {
             .leftJoin("product_images", "products.id", "product_images.product_id")
             .leftJoin("promotions", "products.id", "promotions.product_id")
             .leftJoin("favourite_items", "products.id", "favourite_items.product_id")
-            .groupBy("products.id", "promotions.price_sale", "promotions.type_price", "promotions.end_date","isFav")
+            .groupBy("products.id", "promotions.price_sale", "promotions.type_price", "promotions.end_date", "isFav")
         return products
     }
     // user
@@ -289,6 +289,24 @@ class ProductRepository {
             })
         ))
         return [...products, ...pro]
+    }
+    // get products
+    static async getProductsByListId(listId) {
+        return await knex("products")
+            .select("promotions.price_sale", "products.price", "promotions.type_price")
+            .leftJoin("promotions", "promotions.product_id", "products.id")
+            .whereIn("id", listId)
+            .where("is_delete", 0)
+            .where("is_active", 2)
+            .andWhere(builder => {
+                builder
+                    .where(function () {
+                        this.where("promotions.start_date", "<=", knex.fn.now())
+                            .andWhere("promotions.end_date", ">=", knex.fn.now())
+                    })
+                    .orWhere("promotions.id", null);
+            });
+
     }
 }
 module.exports = ProductRepository

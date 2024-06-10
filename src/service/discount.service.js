@@ -51,6 +51,7 @@ class DiscountService {
         }
         if (discount.applies_to == "all") {
             return {
+                id: discount.id,
                 value: discount.value,
                 name: discount.name,
                 type_price: discount.type_price,
