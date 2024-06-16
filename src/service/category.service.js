@@ -6,6 +6,30 @@ const CategoryRepository = require("../models/repositories/categories.repo");
 
 
 class CategoryService {
+
+  // user
+
+  static async getCategoryInShop({ shopId }) {
+    return await CategoryRepository.getCategoryInShop({ shopId })
+  }
+  static async getAllCategory() {
+    const catgories = await CategoryRepository.getAllCategory();
+    return catgories
+  }
+  static async getCategoryFilter({categoryId}){
+    const catgories = await CategoryRepository.getCategoryFilter({categoryId});
+    return catgories
+  }
+  static async getCategoryById({ categoryId }) {
+    const catgories = await CategoryRepository.getCategoryById({ categoryId });
+    return catgories
+  }
+  static async getAllCategoryShow() {
+    const catgories = await CategoryRepository.getAllCategoryShow();
+    return catgories
+  }
+
+
   static async getAllCategoryOnShop({ shopId, limit, offset, search, active, sortBy }) {
     const catgories = await CategoryRepository.getAllCategoryOnShop({ shopId, limit, offset, search, active, sortBy });
     return catgories

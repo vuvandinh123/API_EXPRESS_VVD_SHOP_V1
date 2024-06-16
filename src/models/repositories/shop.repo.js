@@ -15,8 +15,8 @@ class ShopRepository {
             "shops.username as shop_username",
             "shops.name as shop_name",
             "shops.logo as shop_logo",
-            "shops.country as shop_country",
-            "shops.province	 as shop_province",
+            "shops.nation_id as shop_nation",
+            "shops.province_id	 as shop_province",
             "shops.address	 as shop_address",
             "shops.created_at	 as shop_created_at",
             "shops.website	 as shop_website",
@@ -26,8 +26,9 @@ class ShopRepository {
             "users.phone as user_phone",
             "users.firstName as user_first_name",
             "users.lastName as user_last_name",
-        ).where("shops.user_id", userId).join("users", "users.id", "shops.user_id").
-            groupBy("shops.id", "users.email", "users.firstName", "users.lastName").first()
+        ).where("shops.user_id", userId)
+        .join("users", "users.id", "shops.user_id")
+        .groupBy("shops.id", "users.email", "users.firstName", "users.lastName").first()
     }
     static async findUserByUsername(username) {
         return await knex.from("shops").where({ username }).first()
@@ -38,8 +39,8 @@ class ShopRepository {
             email: data.shop_email,
             phone: data.shop_phone,
             username: data.shop_username,
-            country: data.shop_country,
-            province: data.shop_province,
+            nation_id: data.shop_nation_id,
+            province_id: data.shop_province_id,
             address: data.shop_address,
             website: data.shop_website,
             description: data.shop_description,
@@ -93,6 +94,21 @@ class ShopRepository {
         }
 
         return true;
+    }
+    // admin
+    static async getAllShopByAdmin() {
+        return await knex.from(
+            "shops",
+        ).select(
+            "shops.*",
+            knex.raw(
+                `(select count(id) from products where shop_id = users.id and is_active = 2 and is_delete = 0) as total_product`
+            )
+        ).join("users", "users.id", "shops.user_id")
+        .groupBy("shops.id")
+    }
+    static async changeStatusShop({ shopId, status }) {
+        return await knex("shops").where({ id: shopId }).update({ status })
     }
 }
 module.exports = ShopRepository

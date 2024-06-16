@@ -2,8 +2,8 @@
 
 const express = require('express');
 const asyncHandler = require('../../middlewares/asyncHandle');
-const BrandController = require('../../controllers/brand.controller');
+const UserFollowController = require('../../controllers/userFollow.controller');
 
 const router = express.Router();
-router.get('/categories/:categoryId', asyncHandler(BrandController.getBrandByCategoryId))
+router.get('/stats', asyncHandler(UserFollowController.countUserFollowShopStats))
 module.exports = router

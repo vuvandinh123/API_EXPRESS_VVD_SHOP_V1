@@ -19,7 +19,6 @@ const HEADER = {
 const checkAuthencation = asyncHandler(async (req, res, next) => {
     // Extract the client id from the request headers
     const userId = req.headers[HEADER.CLIENT_ID];
-    console.log(userId,"userId");
     // If the client id is missing, throw a NotFoundError
     if (!userId) throw new NotFoundError("Missing Client Id");
 

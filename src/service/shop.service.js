@@ -6,7 +6,9 @@ const UserRepository = require("../models/repositories/user.repo")
 const { renderVerifyEmailShop } = require("../utils/VerifyEmail");
 const NodeCache = require('node-cache');
 const { sendNodemail } = require('../utils');
+const knex = require('../database/database');
 const cache = new NodeCache();
+const bcrypt = require("bcrypt")
 
 class ShopService {
 
@@ -52,6 +54,32 @@ class ShopService {
     }
     static async getShopByUserId(userId) {
         return await ShopRepository.getShopByUserId(userId)
+    }
+
+    // admin
+    static async getAllShopByAdmin() {
+        return await ShopRepository.getAllShopByAdmin()
+    }
+    static async changeStatusShop({ shopId, status }) {
+        const res = await ShopRepository.changeStatusShop({ shopId, status })
+        const shop = await knex.from("shops").where("shops.id", shopId)
+            .join("users", "users.id", "shops.user_id")
+            .select("shops.*", "users.email", "users.firstName", "users.lastName")
+            .first()
+        if (status === "active") {
+            const password = crypto.randomBytes(6).toString('hex');
+            const passwordHast = await bcrypt.hash(password, 10)
+            await knex("users").where({ id: shop.user_id }).update({ password: passwordHast })
+            let html = `
+                    <p>Tài khoản ${shop.name} của bạn đã được xác nhận với VVD SHOP  </p>
+                    <p>Email: ${shop.email}</p>
+                    <p>Mật khẩu: ${password}</p>
+                    `
+            sendNodemail({ email: shop.email, title: "Vu Dinh Shop - TÀI KHOẢN BÁN HÀNG CỦA BẠN ĐÃ ĐƯỢC XÁC NHẬN", html: html })
+        } else if (status === "cancel") {
+            sendNodemail({ email: shop.email, title: "Vu Dinh Shop - TÀI KHOẢN BÁN HÀNG CỦA BẠN ĐĂNG KÝ KHÔNG ĐẠT YÊU CẦU CỦA CHÚNG TÔI", html: "<p>Xin lỗi nhưng cửa hàng của bạn đăng ký không thành công vui lòng liên hệ để biết thêm chi tiết !!</p>" })
+        }
+
     }
 }
 module.exports = ShopService

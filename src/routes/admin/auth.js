@@ -5,11 +5,11 @@ const checkAuthencation = require('../../middlewares/checkAuthencation');
 const AccessController = require('../../controllers/access.controller');
 
 const router = express.Router();
-router.post('/auth/login', asyncHandler(AccessController.signIn))
+router.post('/login', asyncHandler(AccessController.signIn))
 router.use(checkAuthencation)
-router.post('/auth/signup', asyncHandler(AccessController.signUp))
-router.post('/auth/logout', asyncHandler(AccessController.logOut))
-router.post('/auth/refresh', asyncHandler(AccessController.refreshToken))
+router.post('/signup', asyncHandler(AccessController.signUp))
+router.post('/logout', asyncHandler(AccessController.logOut))
+router.post('/refresh', asyncHandler(AccessController.refreshToken))
 
 
 module.exports = router

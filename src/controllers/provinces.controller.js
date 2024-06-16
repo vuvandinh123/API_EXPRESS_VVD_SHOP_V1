@@ -14,5 +14,13 @@ class ProvincesController {
             data: provinces
         }).send(res)
     }
+    static async getProvinceByProducts(req, res) {
+        const { nationId } = req.params
+        const porvince = await ProvincesService.getProvinceProducts({ nationId })
+        new OK({
+            message: "Get all products successfully",
+            data: porvince
+        }).send(res)
+    }
 }
 module.exports = ProvincesController

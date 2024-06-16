@@ -53,5 +53,21 @@ class ShopController {
             data: shop
         }).send(res)
     }
+    // admin
+    static async getAllShopByAdmin(req, res) {
+        const shop = await ShopService.getAllShopByAdmin()
+        new OK({
+            message: "Get all shop successfully",
+            data: shop
+        }).send(res)
+    }
+    static async changeStatusShop(req, res) {
+        const { shopId, status } = req.body
+        const shop = await ShopService.changeStatusShop({ shopId, status })
+        new OK({
+            message: "Change status shop successfully",
+            data: shop
+        }).send(res)
+    }
 }
 module.exports = ShopController

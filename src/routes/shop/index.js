@@ -4,19 +4,21 @@ const auth = require('../../middlewares/checkAdmin.js');
 const checkAuthencation = require('../../middlewares/checkAuthencation.js');
 const router = express.Router();
 
-router.use('/', require('./auth.js'))
+router.use('/auth', require('./auth.js'))
+router.use('/uploads', require('./upload.js')) 
 router.use(checkAuthencation)
 router.use(auth.checkShop)
-router.use('/', require('./product.js'))
-router.use('/', require('./brand.js'))
-router.use('/', require('./inventoryLog.js'))
-router.use('/', require('./categories.js'))
-router.use('/', require('./upload.js'))
-router.use('/', require('./spec.js'))
-router.use('/', require('./image.js'))
-router.use('/', require('./discount.js'))
-router.use('/', require('./promotion.js'))
-router.use('/', require('./shop.js'))
+router.use('/products', require('./product.js'))
+router.use('/brands', require('./brand.js'))
+router.use('/inventory-logs', require('./inventoryLog.js'))
+router.use('/categories', require('./categories.js'))
+router.use('/specs', require('./spec.js'))
+router.use('/images', require('./image.js'))
+router.use('/discount', require('./discount.js'))
+router.use('/promotions', require('./promotion.js'))
+router.use('/shops', require('./shop.js'))
+router.use('/orders', require("./order.js"))
+router.use('/follows', require("./userFollow.js"))
 
 
 

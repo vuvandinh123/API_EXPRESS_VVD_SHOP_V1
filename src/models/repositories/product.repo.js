@@ -2,7 +2,8 @@ const knex = require("../../database/database");
 const slugify = require('slugify')
 const { sortProduct } = require("../../utils/filter");
 const firebase = require("../../configs/firebase.config");
-function getFilterProducts(query, { sortBy, filter, price, categoryId, active, search }) {
+function getFilterProducts(query, { sortBy = "createdAtDesc", filter, price, stars, province = [], categoryId, active, search }) {
+    console.log(search);
     if (categoryId) {
         query.where('products.category_id', categoryId)
     }
@@ -10,6 +11,12 @@ function getFilterProducts(query, { sortBy, filter, price, categoryId, active, s
         query.where('products.is_active', active)
     } else {
         query.where('products.is_active', "!=", 0)
+    }
+    if (stars) {
+        query.where('products.rating', ">=", stars)
+    }
+    if (province && province.length > 0) {
+        query.whereIn("shops.province_id", province)
     }
     if (search) {
         query.where('products.name', 'like', `%${search}%`)
@@ -34,6 +41,25 @@ function getFilterProducts(query, { sortBy, filter, price, categoryId, active, s
     query.orderBy(sort.nameSort, sort.valueSort)
     return query
 }
+async function getAllIdCategory(categoryId) {
+    const query = `
+    WITH RECURSIVE category_tree AS (
+      SELECT id, parent_id
+      FROM categories
+      WHERE id = ?
+      UNION ALL
+      SELECT c.id, c.parent_id
+      FROM categories c
+      INNER JOIN category_tree ct ON c.parent_id = ct.id
+    )
+    SELECT id FROM category_tree;
+  `;
+
+    const [categoryIds] = await knex.raw(query, [categoryId]);
+
+    const categoryIdArray = categoryIds.map(category => category.id);
+    return categoryIdArray
+}
 class ProductRepository {
     static getProducts() {
         const products = knex
@@ -47,6 +73,7 @@ class ProductRepository {
                 "products.shop_id",
                 "products.is_active",
                 "products.created_at",
+                "provinces.name as province",
                 "products.type",
                 "products.thumbnail",
                 "products.quantity",
@@ -61,12 +88,80 @@ class ProductRepository {
             .leftJoin("product_images", "products.id", "product_images.product_id")
             .leftJoin("promotions", "products.id", "promotions.product_id")
             .leftJoin("favourite_items", "products.id", "favourite_items.product_id")
-            .groupBy("products.id", "promotions.price_sale", "promotions.type_price", "promotions.end_date", "isFav")
+            .leftJoin("shops", "products.shop_id", "shops.user_id")
+            .leftJoin("provinces", "shops.province_id", "provinces.id")
+            .groupBy("products.id", "promotions.price_sale", "promotions.type_price", "promotions.end_date", "isFav", "province")
         return products
     }
     // user
+
+    static async searchProducts({ categoryId, search }) {
+        const query = ProductRepository.getProducts().offset(0).limit(10)
+        if (search) {
+            query.where('products.name', 'like', `%${search}%`)
+        }
+        if (categoryId !== "ALL") {
+            const categoryIdArray = await getAllIdCategory(categoryId)
+            query.whereIn('products.category_id', categoryIdArray)
+        }
+        const res = await query
+        return res
+    }
+    static async getAllProductByCategory({ categoryId = "ALL", offset = 0, limit = 10, sortBy, price, search, stars, province }) {
+        const productQuery = ProductRepository.getProducts()
+            .offset(offset)
+            .limit(limit)
+        const query1 = getFilterProducts(productQuery, { sortBy, price, search, stars, province })
+        const query2 = getFilterProducts(ProductRepository.getProducts(), { sortBy, price, search, stars, province })
+            .count('* as total')
+            .first()
+        if (categoryId !== "ALL") {
+            const categoryIdArray = await getAllIdCategory(categoryId)
+            query1.whereIn('products.category_id', categoryIdArray)
+            query2.whereIn('products.category_id', categoryIdArray)
+        }
+
+        const products = await query1
+        const totalProduct = await query2
+
+        return {
+            data: products,
+            total: totalProduct?.total || 0
+        };
+    }
+    static async getAllProductByCategory({ categoryId, offset = 0, limit = 10, sortBy, price, search, stars, province }) {
+        const productQuery = ProductRepository.getProducts()
+            .offset(offset)
+            .limit(limit)
+        const query1 = getFilterProducts(productQuery, { sortBy, price, search, stars, province })
+        const query2 = getFilterProducts(ProductRepository.getProducts(), { sortBy, price, search, stars, province })
+            .count('* as total')
+            .first()
+        if (categoryId !== "ALL") {
+            const categoryIdArray = await getAllIdCategory(categoryId)
+            query1.whereIn('products.category_id', categoryIdArray)
+            query2.whereIn('products.category_id', categoryIdArray)
+        }
+
+        const products = await query1
+        const totalProduct = await query2
+
+        return {
+            data: products,
+            total: totalProduct?.total || 0
+        };
+    }
     static async getDailyDiscoverProducts() {
         const response = await ProductRepository.getProducts().where('products.is_active', 2).orderBy('products.sold', 'desc').where("products.is_delete", 0).limit(12);
+        return response
+    }
+    static async getProductsRandom() {
+        const response = await ProductRepository.getProducts().where('products.is_active', 2).orderByRaw('RAND()').where("products.is_delete", 0).limit(12);
+        return response
+    }
+    static async getCategoryHot({ categoryId }) {
+        const categoryIdArray = await getAllIdCategory(categoryId)
+        const response = await ProductRepository.getProducts().where('products.is_active', 2).orderBy('products.sold', 'desc').where("products.is_delete", 0).whereIn('category_id', categoryIdArray).limit(18);
         return response
     }
     static async getHotSaleProducts() {
@@ -76,6 +171,27 @@ class ProductRepository {
             .where("promotions.end_date", ">=", knex.fn.now())
             .orderBy('products.created_at', 'desc').limit(12);
         return response
+    }
+
+    static async getProductUserShop(shopId, { limit = 24, offset = 0, sortBy, search, category = "ALL", ...params }) {
+        const query = ProductRepository.getProducts().where('products.is_active', 2).where("products.shop_id", shopId).where("products.is_delete", 0);
+        const prducts = getFilterProducts(query, params).limit(limit).offset(offset);
+        const queryTotal = getFilterProducts(knex.from('products')
+            .where('products.is_delete', 0)
+            .where('products.is_active', 2)
+            .where('products.shop_id', shopId), { sortBy, search })
+            .count("products.id as total")
+        if (category !== "ALL") {
+            prducts.where('products.category_id', category)
+            queryTotal.where('products.category_id', category)
+        }
+
+        const res = await prducts
+        const total = await queryTotal
+        return {
+            data: res,
+            countProduct: total[0].total
+        };
     }
     // shop
 
@@ -307,6 +423,9 @@ class ProductRepository {
                     .orWhere("promotions.id", null);
             });
 
+    }
+    static async updateProductSold(id, qty) {
+        return await knex('products').where('id', id).increment('sold', qty).decrement('quantity', qty)
     }
 }
 module.exports = ProductRepository

@@ -15,8 +15,8 @@ router.get('/momo/ipn', asyncHandler(OrderController.checkPaymentMomo))
 router.use(checkApiKey)
 router.use(checkPermission("0000"))
 router.use('/api/shop/', require('./shop'))
+router.use('/api/admin/', require('./admin'))
 router.use('/api/', require('./site'))
-// router.use('/api/admin/', require('./admin'))
 
 
 

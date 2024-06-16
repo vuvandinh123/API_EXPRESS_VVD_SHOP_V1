@@ -3,6 +3,65 @@ const knex = require("../../database/database");
 const { getFilterCategory } = require("../../utils/filter");
 
 class CategoryRepository {
+
+
+
+    // user
+    static async getAllCategory() {
+        const categories = await knex.select("id", "name", "slug", "parent_id", "thumbnail")
+            .from("categories")
+            .where("is_delete", 0)
+            .andWhere("is_active", 2)
+        return categories
+    }
+    static async getCategoryFilter({ categoryId }) {
+        const query = `
+              WITH RECURSIVE category_tree AS (
+                SELECT id, parent_id
+                FROM categories
+                WHERE id = ?
+                UNION ALL
+                SELECT c.id, c.parent_id
+                FROM categories c
+                INNER JOIN category_tree ct ON c.parent_id = ct.id
+              )
+              SELECT id FROM category_tree;
+            `;
+
+        const [categoryIds] = await knex.raw(query, [categoryId]);
+
+        const categoryIdArray = categoryIds.map(category => category.id);
+        const categories = await knex.select("id", "name", "slug", "thumbnail").from("categories").whereIn("id", categoryIdArray).andWhere("is_delete", 0).andWhere("is_active", 2)
+        return categories;
+    }
+    static async getAllCategoryShow() {
+        const categories = await knex.select("id", "name", "slug", "thumbnail",
+            knex.raw("(select count(id) from products where category_id = categories.id and is_active = 2 and is_delete = 0) as total_product")
+        )
+            .from("categories")
+            .where("parent_id", 0)
+            .where("is_delete", 0)
+            .andWhere("is_active", 2)
+        return categories
+    }
+    static async getCategoryById({ categoryId }) {
+        const categories = await knex.select("id", "name", "slug", "thumbnail",
+            knex.raw("(select count(id) from products where category_id = categories.id and is_active = 2 and is_delete = 0) as total_product")
+        )
+            .from("categories")
+            .where("is_delete", 0)
+            .where("id", categoryId)
+            .andWhere("is_active", 2).first()
+        return categories
+    }
+    static async getCategoryInShop({ shopId }) {
+        const categories = await knex("shop_categories")
+            .where("shop_categories.shop_id", shopId)
+            .join("categories", "categories.id", "shop_categories.category_id")
+            .select("categories.*")
+        return categories
+    }
+
     static async getAllCategorySelect({ shopId }) {
         const categories = knex.select("id", "name").from("categories").where("is_delete", 0).andWhere("is_active", 2).andWhere("user_id", shopId)
         return categories
@@ -41,7 +100,7 @@ class CategoryRepository {
         }
     }
     static async getAllCategoryAdminSelect() {
-        const categories = knex.select("id", "name","slug","parent_id").from("categories").where("is_delete", 0).andWhere("is_active", 2)
+        const categories = knex.select("id", "name", "slug", "parent_id").from("categories").where("is_delete", 0).andWhere("is_active", 2)
         return categories
     }
     static async createCategoryByShop(category, userId) {

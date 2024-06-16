@@ -13,10 +13,35 @@ class ProductService {
 
 
   // user
+  static async getAllProductByCategory({ categoryId, offset, limit, sortBy, price, search, stars, province }) {
+    const products = await ProductRepository.getAllProductByCategory({ categoryId, offset, limit, sortBy, price, search, stars, province })
+    const response = converProductsToResponse(products.data)
+    return {
+      data: response,
+      total: products.total
+    }
+  }
+  static async searchProducts({ categoryId, search }) {
+    const products = await ProductRepository.searchProducts({ categoryId, search })
+    const response = converProductsToResponse(products)
+    return {
+      data: response,
+    }
+  }
   static async getDailyDiscoverProducts() {
     const products = await ProductRepository.getDailyDiscoverProducts()
     const response = converProductsToResponse(products)
 
+    return response
+  }
+  static async getProductsRandom() {
+    const products = await ProductRepository.getProductsRandom()
+    const response = converProductsToResponse(products)
+    return response
+  }
+  static async getCategoryHot({ categoryId }) {
+    const products = await ProductRepository.getCategoryHot({ categoryId })
+    const response = converProductsToResponse(products)
     return response
   }
   static async getHotSaleProducts() {
@@ -25,7 +50,14 @@ class ProductService {
     const response = converProductsToResponse(products)
     return response
   }
-
+  static async getProductUserShop(shopId, params) {
+    const products = await ProductRepository.getProductUserShop(shopId, params)
+    const response = converProductsToResponse(products.data)
+    return {
+      data: response,
+      countProduct: products.countProduct
+    }
+  }
   // shop
   static async getAllProductsByShop({ limit, offset, categoryId, filter, price, sortBy, active, search }, user) {
     const products = await ProductRepository.getAllProductsByShop({ limit, offset, categoryId, filter, price, sortBy, active, search }, user)
@@ -248,8 +280,8 @@ class ProductService {
     return product
   }
 
-  static async getAllProductAndVariant({ shopId ,search,}) {
-    const products = await ProductRepository.getAllProductAndVariant({ shopId ,search})
+  static async getAllProductAndVariant({ shopId, search, }) {
+    const products = await ProductRepository.getAllProductAndVariant({ shopId, search })
     return products
   }
 }

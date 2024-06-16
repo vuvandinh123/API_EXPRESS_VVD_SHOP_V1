@@ -60,12 +60,12 @@ class InventoryLogService {
         await InventoryLogRepository.createProductInventoryLog({
           product_id: item.product_id,
           quantity: item.quantity,
+          import_price: item.import_price,
           amount: amount,
           inventory_id: inventory[0],
           code: item.variant?.code ?? ""
         })
       }))
-
       return inventory
     } catch (error) {
       if (error instanceof BadRequestError) {

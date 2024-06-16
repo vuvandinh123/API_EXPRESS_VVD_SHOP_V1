@@ -5,20 +5,20 @@ const ProductController = require('../../controllers/product.controller');
 
 const router = express.Router();
 // get
-router.get('/products', asyncHandler(ProductController.getProductsByShop))
-router.get('/products/trash', asyncHandler(ProductController.getProductsTrashByShop))
-router.get('/products/inventory', asyncHandler(ProductController.getInventory))
-router.get('/products/count-status', asyncHandler(ProductController.getCountStatusProduct))
-router.get('/products/search-inventory', asyncHandler(ProductController.getAllProductAndVariant))
-router.get('/products/:productId', asyncHandler(ProductController.getProductByShopWithId))
+router.get('/', asyncHandler(ProductController.getProductsByShop))
+router.get('/trash', asyncHandler(ProductController.getProductsTrashByShop))
+router.get('/inventory', asyncHandler(ProductController.getInventory))
+router.get('/count-status', asyncHandler(ProductController.getCountStatusProduct))
+router.get('/search-inventory', asyncHandler(ProductController.getAllProductAndVariant))
+router.get('/:productId', asyncHandler(ProductController.getProductByShopWithId))
 // edit
-router.put('/products/:productId', asyncHandler(ProductController.editProductByShop))
-router.patch('/products/change-status', asyncHandler(ProductController.changeStatusProduct))
+router.put('/:productId', asyncHandler(ProductController.editProductByShop))
+router.patch('/change-status', asyncHandler(ProductController.changeStatusProduct))
 // patch status
-router.patch('/products/deletes', asyncHandler(ProductController.patchProductToDelete))
+router.patch('/deletes', asyncHandler(ProductController.patchProductToDelete))
 // delete
-router.delete('/products/:id', asyncHandler(ProductController.deleteProducts))
+router.delete('/:id', asyncHandler(ProductController.deleteProducts))
 // create
-router.post('/products', asyncHandler(ProductController.createProducts))
+router.post('/', asyncHandler(ProductController.createProducts))
 
 module.exports = router

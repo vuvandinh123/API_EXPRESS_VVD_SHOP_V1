@@ -9,18 +9,20 @@ const checkOrderEmail = require("../utils/checkOrderEmail");
 const { sendNodemail } = require("../utils");
 const moment = require("moment");
 const OrderRepository = require("../models/repositories/order.repo");
+const ProductRepository = require("../models/repositories/product.repo");
 class OrderService {
 
 
   // lấy tất cả đơn hàng cho người dùng
-  static async getOrderByUser({ user,type }) {
-    return OderRepository.getOrderByUser({ user,type });
+  static async getOrderByUser({ user, type }) {
+    return OderRepository.getOrderByUser({ user, type });
   }
 
 
   static async addOrderByUser({ data, user, requestId = "HOME" + new Date().getTime() }) {
     const { checkout, orders = [] } = data;
-
+    let ids = [];
+    let productIds = [];
     for (const orderData of orders) {
       if (orderData.order.products.length > 0) {
         let totalDiscount = 0;
@@ -44,7 +46,7 @@ class OrderService {
         };
         // thêm đơn hàng mới cho từng shops
         const newOrder = await OderRepository.addOrderByUser({ data: ordersInsert });
-
+        ids.push(newOrder[0]);
         const orderItemInsert = orderData.order.products.map(item => ({
           order_id: newOrder[0],
           product_price: item.price,
@@ -52,24 +54,36 @@ class OrderService {
           code: item.code || null,
           quantity: item.quantity,
         }));
-        // thêm đơn hàng của người dùng
-        await OderDetailRepository.addOrderDetailByUser({ data: orderItemInsert });
+        const updateProductQuantities = orderItemInsert.map(item =>
+          ProductRepository.updateProductSold(item.product_id, item.quantity)
+        );
+        const res = await Promise.all([
+          OderDetailRepository.addOrderDetailByUser({ data: orderItemInsert }),
+          Promise.all(updateProductQuantities),
+        ])
       }
     }
-    // Gửi email khi đặt hàng thành công
-    this.sendEmailOrder({ requestId, email: user.email });
-    return data;
+
+    return ids;
   }
-  static async sendEmailOrder({ email, requestId }) {
+  static async createNewOrder({ data, user, requestId = "HOME" + new Date().getTime() }) {
+    const ids = await this.addOrderByUser({ data, user, requestId })
+    ids.map((id) => {
+      this.sendEmailOrder({ orderId: id, email: user.email });
+    })
+    return ids
+  }
+  static async sendEmailOrder({ email, orderId }) {
 
-    const orders = await knex("orders").select("*").where({ request_id: requestId })
-    const orderId = orders.map(item => item.id)
-    const discountId = orders.map(item => item.discount_id).filter(item => item != null)
-    const addressId = orders[0].address_id;
-    const deliveryId = orders[0].delivery_method_id;
-    // 
+    const order = await knex("orders").select("*").where({ id: orderId }).first()
+    const discountId = order.discount_id
+    const addressId = order.address_id;
+    const deliveryId = order.delivery_method_id;
+
+    const shop = await knex("shops").select("shops.*", "provinces.name as province_name").where("shops.user_id", order.shop_id)
+      .leftJoin("provinces", "shops.province_id", "provinces.id")
+      .first()
     const { totalDiscount, distCountShipping, orderDetail } = await OrderRepository.getOrderDiscount({ discountId, orderId })
-
     // truy vấn lấy ra địa chỉ người đặt hàng
     const address_user = await knex("user_address_orders")
       .select("user_address_orders.*", "provinces.name as province_name", "nations.name as nation_name")
@@ -82,49 +96,45 @@ class OrderService {
     const costShipping = await knex("delivery_methods").select("cost").where({ id: deliveryId }).first()
 
     // tinh tong don hang chưa khuyến mại va phi vân chuyển
-    const amount = orderDetail.reduce((total, item) => total + item.price * item.quantity, 0)
+    const amount = order.amount
 
     // tổng đơn hàng đã trừ khuyến mại và phí vận chuyển
     const total_amount = amount - totalDiscount + (costShipping.cost - distCountShipping)
     const formOrder = {
-      request_id: requestId,
+      request_id: order.id,
       cost: costShipping.cost - distCountShipping,
+      shop_name: shop?.name,
+      shop_province: shop?.province_name,
       discount: totalDiscount,
       amount: amount,
-      total_amount: orders[0].payment_method === "deliver" ? total_amount : 0,
-      isPaid: orders[0].payment_method === "deliver" ? false : true,
+      total_amount: total_amount,
+      isPaid: order.payment_method === "deliver" ? false : true,
       order_date: moment().format("hh:mm DD-MM-YYYY"),
-      payment_method: orders[0].payment_method,
+      payment_method: order.payment_method,
       address_detail: address_user.address_detail,
       name: (address_user?.last_name + " " + address_user?.first_name)?.toUpperCase(),
       nation_name: address_user.nation_name,
       province_name: address_user.province_name,
     }
     const html = checkOrderEmail({ data: orderDetail, order: formOrder })
-    sendNodemail({ email: email, title: "VVD SHOP | ĐẶT HÀNG THÀNH CÔNG ", html: html })
+    sendNodemail({ email: email, title: `VVD SHOP | ĐƠN HÀNG #${order.id} THÀNH CÔNG `, html: html })
   }
   static async gengerateOrderCode({ data, user }) {
     const requestId = "MOMO" + new Date().getTime();
-    const checkout = await this.addOrderByUser({ data, user, requestId })
-    if (!checkout) {
+    const ids = await this.addOrderByUser({ data, user, requestId })
+    if (!ids) {
       throw new BadRequestError("Create order failed")
     }
     const orders = await knex("orders").select("*").where({ request_id: requestId })
-
-    const orderId = orders.map(item => item.id)
-    const discountId = orders.map(item => item.discount_id).filter(item => item != null)
-
-    const { totalDiscount, distCountShipping } = await OrderRepository.getOrderDiscount({ discountId, orderId })
-    const secretKey = crypto.randomBytes(24).toString('hex')
-    const total = data.orders.reduce((total, item) => total + item.order.amount, 0)
-    const delivery = await knex("delivery_methods").select("*").where({ id: data.checkout.delivery_id }).first()
-    const total_amount = total + Number(delivery.cost) - totalDiscount - distCountShipping;
+    const total_amount = orders.reduce((total, item) => total + item.total_amount, 0)
     const dataNew = {
       amount: total_amount,
       user_id: user.id,
       requestId: requestId,
+      orderIds: ids,
       timestamp: Date.now()
     }
+    const secretKey = crypto.randomBytes(24).toString('hex')
     const token = jwt.sign(dataNew, secretKey, { expiresIn: '1h' });
     return {
       token: token,
@@ -133,6 +143,21 @@ class OrderService {
   }
   static async updateStatusPaymentSuccess({ orderId }) {
     return await OderRepository.updateStatusPaymentSuccess({ orderId })
+  }
+  // shop
+  static async getDashboradShop({ shopId }) {
+    return await OderRepository.getDashboradShop({ shopId })
+  }
+  static async getAllOrderByShop({ shopId, limit, offset }) {
+    return await OrderRepository.getAllOrderByShop({ shopId, limit, offset })
+  }
+  static async getOrderByIdShop({ orderId, shopId }) {
+    const res = await OrderRepository.getOrderByIdShop({ orderId, shopId })
+    const orderDetail = await OderDetailRepository.getOrderDetailByOrderId({ orderId })
+    return { ...res, products: orderDetail }
+  }
+  static async updateStatusOrder({ orderId, shopId, status }) {
+    return await OrderRepository.updateStatusOrder({ orderId, shopId, status })
   }
 }
 module.exports = OrderService;

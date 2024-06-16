@@ -4,11 +4,12 @@ const crypto = require('crypto');
 const https = require('https');
 const jwt = require('jsonwebtoken');
 const OrderRepository = require("../models/repositories/order.repo");
+const { getParamsPagination } = require("../utils");
 class OrderController {
 
     static async addOrderByUser(req, res) {
         const body = req.body
-        const delivery = await OrderService.addOrderByUser({ data: body, user: req.user })
+        const delivery = await OrderService.createNewOrder({ data: body, user: req.user })
         new OK({
             message: "Get all delivery successfully",
             data: delivery
@@ -34,6 +35,7 @@ class OrderController {
         const {
             orderId,
             resultCode,
+            extraData,
             message
         } = req.query;
         const isOrder = await OrderRepository.getOrderByRequestId({ orderId });
@@ -48,17 +50,16 @@ class OrderController {
         }
         if (resultCode === "0" && message === "Successful.") {
             await OrderService.updateStatusPaymentSuccess({ orderId });
-            OrderService.sendEmailOrder({ email: isOrder.email, requestId: orderId });
-            res.redirect("http://localhost:5173/cart?success=true");
+            const orderIds = JSON.parse(extraData)
+            orderIds.map(async (orderId) => {
+                OrderService.sendEmailOrder({ email: isOrder.email, orderId: orderId });
+            })
+            res.redirect("http://localhost:5173/user/purchase?success=true");
             return;
         }
         else {
-            res.send({
-                message: "Invalid signature",
-                data: {
-                    success: false,
-                }
-            })
+            res.redirect("http://localhost:5173/user/purchase?success=false");
+            return;
         }
 
     }
@@ -75,7 +76,7 @@ class OrderController {
         var ipnUrl = "http://localhost:8080/momo/ipn";
         var amount = Math.round(req?.payment?.amount).toString();
         var requestType = "captureWallet"
-        var extraData = ""; //pass empty value if your merchant does not have stores
+        var extraData = JSON.stringify(req?.payment?.orderIds); //pass empty value if your merchant does not have stores
 
         var rawSignature = "accessKey=" + accessKey + "&amount=" + amount + "&extraData=" + extraData + "&ipnUrl=" + ipnUrl + "&orderId=" + orderId + "&orderInfo=" + orderInfo + "&partnerCode=" + partnerCode + "&redirectUrl=" + redirectUrl + "&requestId=" + requestId + "&requestType=" + requestType
         //signature
@@ -83,7 +84,6 @@ class OrderController {
         var signature = crypto.createHmac('sha256', secretkey)
             .update(rawSignature)
             .digest('hex');
-        console.log(signature, "signature v1 - 1");
 
         //json object send to MoMo endpoint
         const requestBody = JSON.stringify({
@@ -140,6 +140,50 @@ class OrderController {
         console.log("Sending....");
         momoRequest.write(requestBody);
         momoRequest.end();
+    }
+    // shops
+    static async getDashboradShop(req, res) {
+        const order = await OrderService.getDashboradShop({ shopId: req.user.id })
+        new OK({
+            message: "Get all orders successfully",
+            data: order
+        }).send(res)
+    }
+
+    static async getAllOrderByShop(req, res) {
+        const { page, limit, offset } = getParamsPagination(req);
+        const { data, total } = await OrderService.getAllOrderByShop({ shopId: req.user.id, limit, offset })
+
+        const options = {
+            total: total,
+            pagination: {
+                totalPage: Math.ceil(total / limit),
+                page,
+                limit
+            }
+        };
+        new OK({
+            message: "Get all orders successfully",
+            data: data,
+            options
+        }).send(res)
+    }
+    static async getOrderByIdShop(req, res) {
+        const orderId = req.params.orderId
+        const order = await OrderService.getOrderByIdShop({ orderId, shopId: req.user.id })
+        new OK({
+            message: "Get order successfully",
+            data: order
+        }).send(res)
+    }
+
+    static async updateStatusOrder(req, res) {
+        const { orderId, status } = req.body
+        const order = await OrderService.updateStatusOrder({ orderId, shopId: req.user.id, status })
+        new OK({
+            message: "Update order successfully",
+            data: order
+        }).send(res)
     }
 }
 module.exports = OrderController

@@ -10,8 +10,8 @@ const router = express.Router();
 const upload = multer({
     storage: multer.memoryStorage(),
 });
-router.post("/uploads/multiple", upload.array('images', 12), UploadController.uploads)
-router.post("/uploads/single", upload.array('images', 12), UploadController.uploads)
-router.post("/uploads/xlsx", upload.single('file'), asyncHandler(UploadController.uploadXLSX))
-router.post("/uploads/multiple/delete", UploadController.deletes)
+router.post("/multiple", upload.array('images', 12), UploadController.uploads)
+router.post("/single", upload.array('images', 12), UploadController.uploads)
+router.post("/xlsx", upload.single('file'), asyncHandler(UploadController.uploadXLSX))
+router.post("/multiple/delete", UploadController.deletes)
 module.exports = router

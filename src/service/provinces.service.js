@@ -10,5 +10,9 @@ class ProvincesService {
     const provinces = await ProvincesRepository.getAllProvinces({ nationId });
     return provinces
   }
+  static async getProvinceProducts({ nationId }) {
+    const provinces = await ProvincesRepository.getProvinceProducts({ nationId });
+    return provinces
+  }
 }
 module.exports = ProvincesService;

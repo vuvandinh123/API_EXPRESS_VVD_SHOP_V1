@@ -1,5 +1,6 @@
 const knex = require("../../database/database");
-
+const moment = require("moment");
+const OderDetailRepository = require("./order_detail.repo");
 class OrderRepository {
   static async addOrderByUser({ data, userId }) {
     const payment = knex("orders").insert(data)
@@ -107,7 +108,7 @@ class OrderRepository {
       )
       .join("products", "products.id", "order_details.product_id")
       .leftJoin("promotions", "promotions.product_id", "products.id")
-      .whereIn("order_details.order_id", orderId)
+      .where("order_details.order_id", orderId)
       .orderBy("order_details.id")
       .groupBy(
         "products.id",
@@ -127,36 +128,110 @@ class OrderRepository {
     // truy vấn lấy ra khuyến mại
     const discount = await knex("discounts")
       .leftJoin("discount_products", "discounts.id", "discount_products.discount_id")
-      .whereIn("discounts.id", discountId)
+      .where("discounts.id", discountId)
       .select("discounts.id", "discounts.value", "discounts.type_price", "discount_products.product_id", "discounts.applies_to")
-      .groupBy("discount_products.product_id", "discounts.id", "discounts.value", "discounts.type_price")
+      .groupBy("discount_products.product_id", "discounts.id", "discounts.value", "discounts.type_price").first();
     // tinhs tôngri khuyen mai
     let totalDiscount = 0;
     let distCountShipping = 0;
-
-    for (const discountItem of discount) {
-      if (discountItem.applies_to === "all") {
-        totalDiscount += discountItem.value
+    if (discount) {
+      if (discount.applies_to === "all") {
+        totalDiscount += discount.value
       }
       else {
         for (const orderItem of orderDetail) {
-          if (discountItem.product_id === orderItem.product_id) {
+          if (discount.product_id === orderItem.product_id) {
             const amount = orderItem.price * orderItem.quantity;
-            if (discountItem.type === "shipping") {
-              discountItem.type_price === "percent"
-                ? (distCountShipping += amount * (discountItem.value / 100))
-                : (distCountShipping += discountItem.value);
+            if (discount.type === "shipping") {
+              discount.type_price === "percent"
+                ? (distCountShipping += amount * (discount.value / 100))
+                : (distCountShipping += discount.value);
             } else {
-              discountItem.type_price === "percent"
-                ? (totalDiscount += amount * (discountItem.value / 100))
-                : (totalDiscount += discountItem.value);
+              discount.type_price === "percent"
+                ? (totalDiscount += amount * (discount.value / 100))
+                : (totalDiscount += discount.value);
             }
           }
         }
       }
-
     }
+
+
     return { totalDiscount, distCountShipping, orderDetail };
+  }
+
+  // shop
+  static async getDashboradShop({ shopId }) {
+    // Xác định thời gian bắt đầu và kết thúc của ngày
+    const startDate = moment().startOf('day').toDate(); // Bắt đầu từ 00:00:00 của ngày hiện tại
+    const endDate = moment().endOf('day').toDate(); // Kết thúc vào 23:59:59 của ngày hiện tại
+
+    const results = await knex("orders")
+      .select(
+        knex.raw('COUNT(*) AS total_orders'),
+        knex.raw('SUM(CASE WHEN status = "SUCCESS" THEN amount ELSE 0  END) AS total_success'),
+        knex.raw('SUM(CASE WHEN status = "PENDING" THEN amount ELSE 0 END) AS total_pending'),
+        knex.raw('COUNT(CASE WHEN status = "PENDING" THEN 1 END) AS new_orders_pending'),
+        knex.raw('COUNT(CASE WHEN status = "SUCCESS" THEN 1 END) AS successful_orders')
+      )
+      .where("shop_id", shopId)
+      .andWhere("order_date", ">=", startDate)
+      .andWhere("order_date", "<=", endDate)
+      .first();
+
+    return results
+  }
+  static getOrder(shopId, { status = "ALL" }) {
+    const query = knex("orders")
+      .select("*")
+      .where("shop_id", shopId)
+      .orderBy("order_date", "desc")
+      .groupBy("id");
+    if (status !== "ALL")
+      query.where("status", status);
+    return query
+  }
+  static async getAllOrderByShop({ shopId, offset, limit, ...params }) {
+    const query1 = OrderRepository.getOrder(shopId, params).limit(limit).offset(offset);
+    const query2 = OrderRepository.getOrder(shopId, params).count("id", "total").first();
+    const result = await query1
+    const countOrder = await query2
+    return {
+      data: result,
+      total: countOrder.total
+    }
+  }
+  static async getOrderByIdShop({ shopId, orderId }) {
+    const order = await knex("orders")
+      .select([
+        "users.firstName",
+        "users.lastName",
+        "users.email",
+        "delivery_methods.description as delivery_methods",
+        "delivery_methods.cost as delivery_cost",
+        "orders.*",
+        "discounts.value",
+        "discounts.type_price",
+        "discounts.applies_to",
+
+      ])
+      .where("orders.shop_id", shopId)
+      .andWhere("orders.id", orderId)
+      .join("delivery_methods", "orders.delivery_method_id", "delivery_methods.id")
+      .join("users", "orders.user_id", "users.id")
+      .leftJoin("discounts", "orders.discount_id", "discounts.id")
+      .groupBy("orders.id", "users.firstName", "users.lastName", "users.email", "delivery_methods.description", "delivery_cost")
+      .first();
+    return order
+  }
+
+  static async updateStatusOrder({ orderId, shopId, status }) {
+    const order = await knex
+      .from("orders")
+      .where("id", orderId)
+      .andWhere("shop_id", shopId)
+      .update({ status });
+    return order
   }
 
 }

@@ -16,10 +16,63 @@ class ProductController {
     /**
      * ROLE -----> user
      */
+    static async getProductsByCategory(req, res) {
+        const { categoryId } = req.params
+        const { limit, offset, page } = getParamsProduct(req);
+        const { sortBy, price, search, stars, province } = req.query
+        const { data, total } = await ProductService.getAllProductByCategory({ categoryId, limit, offset, sortBy, price, search, stars, province })
+        const options = {
+            count: total,
+            pagination: {
+                totalPage: Math.ceil(total / limit),
+                page: page,
+                limit
+            }
+        }
+        new OK({
+            message: "Get daily discover products successfully",
+            data: data,
+            options
+        }).send(res)
+    }
+    static async getCategoryHot(req, res) {
+        const { categoryId } = req.query
+        const products = await ProductService.getCategoryHot({ categoryId })
+        new OK({
+            message: "Get category hot successfully",
+            data: products
+        }).send(res)
+    }
+    static async searchProducts(req, res) {
+        // get params
+        const { limit, offset, page } = getParamsProduct(req);
+        const { categoryId = "ALL", search, sortBy, price, stars, province } = req.query
+        const { data, total } = await ProductService.getAllProductByCategory({ categoryId, search, sortBy, price, stars, province, limit, offset })
+        const options = {
+            count: total,
+            pagination: {
+                totalPage: Math.ceil(total / limit),
+                page: page,
+                limit
+            }
+        }
+        new OK({
+            message: "search products successfully",
+            data: data,
+            options
+        }).send(res)
+    }
     static async getDailyDiscoverProducts(req, res) {
         const products = await ProductService.getDailyDiscoverProducts()
         new OK({
             message: "Get daily discover products successfully",
+            data: products
+        }).send(res)
+    }
+    static async getProductsRandom(req, res) {
+        const products = await ProductService.getProductsRandom()
+        new OK({
+            message: "Get products random successfully",
             data: products
         }).send(res)
     }
@@ -28,6 +81,27 @@ class ProductController {
         new OK({
             message: "Get hot sale products successfully",
             data: products
+        }).send(res)
+    }
+    static async getProductUserShop(req, res) {
+        const { shopId } = req.params
+        const { limit, offset } = getParamsProduct(req);
+        const { category, search, sortBy } = req.query
+        const { data, countProduct } = await ProductService.getProductUserShop(shopId, { limit, offset, category, search, sortBy })
+        const totalPage = Math.ceil(countProduct / limit);
+        // Construct options object
+        const options = {
+            countProduct: countProduct,
+            pagination: {
+                totalPage,
+                page: req.query.page,
+                limit
+            }
+        };
+        new OK({
+            message: "Get product user shop successfully",
+            data: data,
+            options
         }).send(res)
     }
     /**

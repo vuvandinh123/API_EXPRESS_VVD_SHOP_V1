@@ -5,6 +5,50 @@ const { getParamsPagination } = require("../utils")
 
 class CategoryController {
 
+
+    // user
+
+    static async getAllCategory(req, res) {
+        const categories = await CategoryService.getAllCategory()
+        new OK({
+            message: "Get all categories successfully",
+            data: categories
+        }).send(res)
+    }
+    static async getCategoryFilter(req, res) {
+        const { categoryId } = req.params
+        const categories = await CategoryService.getCategoryFilter({ categoryId })
+        new OK({
+            message: "Get all categories successfully",
+            data: categories
+        }).send(res)
+    }
+    static async getAllCategoryShow(req, res) {
+        const categories = await CategoryService.getAllCategoryShow()
+        new OK({
+            message: "Get all categories successfully",
+            data: categories
+        }).send(res)
+    }
+    static async getCategoryById(req, res) {
+        const { categoryId } = req.params
+        const categories = await CategoryService.getCategoryById({ categoryId })
+        new OK({
+            message: "Get all categories successfully",
+            data: categories
+        }).send(res)
+    }
+    static async getCategoryInShop(req, res) {
+        const { shopId } = req.params
+        const categories = await CategoryService.getCategoryInShop({ shopId: shopId })
+        new OK({
+            message: "Get all categories successfully",
+            data: categories
+        }).send(res)
+    }
+
+
+
     // lấy tất cả danh mục và phân trang 
     static async getAllCategoryOnShop(req, res) {
         const { limit, offset, page } = getParamsPagination(req);
