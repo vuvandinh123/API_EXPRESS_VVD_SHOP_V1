@@ -63,6 +63,7 @@ class DiscountService {
             const productIds = discountProduct.map(item => item.product_id)
             return {
                 value: discount.value,
+                id: discount.id,
                 type_price: discount.type_price,
                 name: discount.name,
                 applies_to: discount.applies_to,

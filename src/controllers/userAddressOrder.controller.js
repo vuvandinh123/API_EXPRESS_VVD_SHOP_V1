@@ -18,8 +18,30 @@ class UserAddressOrderController {
             data: req.body,
             userId: req.user.id
         })
-        new CREATED({   
+        new CREATED({
             message: "Create address successfully",
+            data: address
+        }).send(res)
+    }
+    static async updateAddressOrderByUser(req, res) {
+        const id = req.params.addressId
+        const address = await UserAddressOrderService.updateAddressOrderByUser({
+            id,
+            data: req.body,
+        })
+        new OK({
+            message: "Update address successfully",
+            data: address
+        }).send(res)
+    }
+
+    static async deleteAddressOrderByUser(req, res) {
+        const id = req.params.addressId
+        const address = await UserAddressOrderService.deleteAddressOrderByUser({
+            id
+        })
+        new OK({
+            message: "Delete address successfully",
             data: address
         }).send(res)
     }

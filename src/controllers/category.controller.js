@@ -89,7 +89,7 @@ class CategoryController {
         }).send(res)
     }
     static async getCountStatusCategory(req, res) {
-        const count = await CategoryService.getCountStatusCategory({ shopId: req.user.id })
+        const count = await CategoryService.getCountStatusCategory()
         new OK({
             message: "Get count status category successfully",
             data: count
@@ -102,16 +102,16 @@ class CategoryController {
             data: categories
         }).send(res)
     }
-    static async createCategoryByShop(req, res) {
-        const category = await CategoryService.createCategoryByShop(req.body, req.user.id)
+    static async createCategory(req, res) {
+        const category = await CategoryService.createCategory(req.body, req.user.id)
         new CREATED({
             message: "Create category successfully",
             data: category
         }).send(res)
     }
-    static async updateCategoryByShop(req, res) {
+    static async updateCategory(req, res) {
         const categoryId = req.params.categoryId
-        const category = await CategoryService.updateCategoryByShop(categoryId, req.body, req.user.id)
+        const category = await CategoryService.updateCategory(categoryId, req.body)
         new OK({
             message: "Update category successfully",
             data: category
@@ -125,9 +125,9 @@ class CategoryController {
             data: category
         }).send(res)
     }
-    static async deleteCategoryByShop(req, res) {
+    static async deleteCategory(req, res) {
         const { listId } = req.body
-        const category = await CategoryService.deleteCategoryByShop({ listId })
+        const category = await CategoryService.deleteCategory({ listId })
         new OK({
             message: "Delete category successfully",
             data: category
@@ -141,5 +141,27 @@ class CategoryController {
             data: category
         }).send(res)
     }
+    static async getAllCategoryByAdmin(req, res) {
+        const { limit, offset, page } = getParamsPagination(req);
+        const { search, active, sortBy } = req.query
+        const { data, total } = await CategoryService.getAllCategoryByAdmin({ limit, offset, search, active, sortBy })
+        const totalPage = Math.ceil(total / limit);
+        const options = {
+            count: total,
+            pagination: {
+                totalPage,
+                page,
+                limit
+            }
+        };
+        new OK({
+            message: "Get all categories successfully",
+            data: data,
+            options
+        }).send(res)
+    }
+
+
 }
+
 module.exports = CategoryController

@@ -17,12 +17,17 @@ class CartRepository {
             .leftJoin("products", "products.id", "cart_items.product_id")
             .leftJoin("promotions", "products.id", "promotions.product_id")
             .leftJoin("discounts", "discounts.id", "cart_items.discount_id")
-            // .where("promotions.end_date", ">=", knex.fn.now())
-            // .where("promotions.start_date", "<=", knex.fn.now())
+            .where(builder => {
+                builder
+                    .where(function () {
+                        this.where("promotions.start_date", "<=", knex.fn.now())
+                            .andWhere("promotions.end_date", ">=", knex.fn.now())
+                    })
+                    .orWhere("promotions.id", null);
+            })
             .select(
                 "products.id",
                 "cart_items.id as cart_item_id",
-                "cart_items.is_check",
                 "products.name",
                 "products.price",
                 "products.thumbnail",
@@ -52,7 +57,6 @@ class CartRepository {
                 fix_price: item.fix_price,
                 thumbnail: item.thumbnail,
                 slug: item.slug,
-                is_check: item.is_check,
                 quantity: item.quantity,
                 code: item.code,
                 cart_item_id: item.cart_item_id,

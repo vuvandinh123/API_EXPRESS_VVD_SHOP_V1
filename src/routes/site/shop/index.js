@@ -10,5 +10,6 @@ const checkAuthencation = require('../../../middlewares/checkAuthencation');
 router.get('/:shopId', asyncHandler(ShopController.getShopById))
 router.use(checkAuthencation)
 router.get('/is-follow/:shopId', asyncHandler(ShopController.getIsFollowShop))
+router.post('/chats', asyncHandler(ShopController.getShopChatsByIds))
 router.patch('/follow/:shopId', asyncHandler(ShopController.toggleFollowShop))
 module.exports = router

@@ -45,13 +45,14 @@ class CategoryRepository {
         return categories
     }
     static async getCategoryById({ categoryId }) {
-        const categories = await knex.select("id", "name", "slug", "thumbnail",
+        const categories = await knex.select("id", "name", "slug", "thumbnail", "description","parent_id",
             knex.raw("(select count(id) from products where category_id = categories.id and is_active = 2 and is_delete = 0) as total_product")
         )
             .from("categories")
             .where("is_delete", 0)
             .where("id", categoryId)
-            .andWhere("is_active", 2).first()
+            .andWhere("is_active", 2)
+            .first()
         return categories
     }
     static async getCategoryInShop({ shopId }) {
@@ -85,91 +86,86 @@ class CategoryRepository {
         // query.orderBy(sort.nameSort, sort.valueSort)
         return query;
     };
-    static async getAllCategoryOnShop({ shopId, limit, offset, search, active, sortBy }) {
-        const q = this.buildQuery(shopId, { limit, offset, search, active, sortBy })
-            .select("id", "name", "thumbnail", "slug", "description", "created_at", "updated_at", "is_active",
-                knex.raw("(select count(id) from products where category_id = categories.id and is_active = 2 and is_delete = 0) as total_product")
-            )
-            .limit(limit).offset(offset).groupBy("id").count("id as totalPro")
-        const categories = await q
-        const totalCate = await this.buildQuery(shopId, { limit, offset, search, active, sortBy }).count("categories.id as total")
-        console.log(totalCate);
-        return {
-            data: categories,
-            total: totalCate[0].total
-        }
-    }
+    // static async getAllCategoryOnShop({ shopId, limit, offset, search, active, sortBy }) {
+    //     const q = this.buildQuery(shopId, { limit, offset, search, active, sortBy })
+    //         .select("id", "name", "thumbnail", "slug", "description", "created_at", "updated_at", "is_active",
+    //             knex.raw("(select count(id) from products where category_id = categories.id and is_active = 2 and is_delete = 0) as total_product")
+    //         )
+    //         .limit(limit).offset(offset).groupBy("id").count("id as totalPro")
+    //     const categories = await q
+    //     const totalCate = await this.buildQuery(shopId, { limit, offset, search, active, sortBy }).count("categories.id as total")
+    //     console.log(totalCate);
+    //     return {
+    //         data: categories,
+    //         total: totalCate[0].total
+    //     }
+    // }
     static async getAllCategoryAdminSelect() {
         const categories = knex.select("id", "name", "slug", "parent_id").from("categories").where("is_delete", 0).andWhere("is_active", 2)
         return categories
     }
-    static async createCategoryByShop(category, userId) {
+    static async createCategory(category, userId) {
         const data = {
             name: category.name,
             slug: slugify(category.name, { lower: true, strict: true, trim: true }),
             description: category.description,
-            parent_id: category.parent_id,
+            parent_id: category.parent_id ?? 0,
             user_id: userId,
             is_active: category.is_active,
-            role: "SHOP",
+            role: "ADMIN",
             thumbnail: category.thumbnail
         }
         return await knex("categories").insert(data)
     }
-    static getCountStatusCategory = async ({ shopId }) => {
+    static getCountStatusCategory = async () => {
         const response = await knex('categories')
             .select(
                 knex.raw(
                     `(
                 SELECT COUNT(id)
                 FROM categories
-                WHERE is_active != 0 and is_delete = 0 AND user_id = ? 
-            ) AS countTotal`, [shopId]
+                WHERE is_active != 0 and is_delete = 0 ) AS countTotal`
                 ),
                 knex.raw(
                     `(
                 SELECT COUNT(id)
                 FROM categories
-                WHERE is_active = 2 AND is_delete = 0 AND user_id = ? 
-            ) AS countActive`, [shopId]
+                WHERE is_active = 2 AND is_delete = 0 
+            ) AS countActive`
                 ),
                 knex.raw(
                     `(
                 SELECT COUNT(id)
                 FROM categories
-                WHERE is_active = 1 AND is_delete = 0 AND user_id = ? 
-            ) AS countUnActive`, [shopId]
+                WHERE is_active = 1 AND is_delete = 0 
+            ) AS countUnActive`
                 ),
                 knex.raw(
                     `(
                 SELECT COUNT(id)
                 FROM categories
-                WHERE is_active = 0 AND is_delete = 0 AND user_id = ? 
-            ) AS countTrash`, [shopId]
+                WHERE is_active = 0 AND is_delete = 0 
+            ) AS countTrash`
                 )
             )
             .where('is_delete', 0)
-            .andWhere('user_id', shopId)
             .first();
 
         return response
     }
-    static updateCategoryByShop = async (categoryId, data, userId) => {
+    static updateCategory = async (categoryId, data, userId) => {
         const dataNew = {
             name: data.name,
             slug: slugify(data.name, { lower: true, strict: true, trim: true }),
             description: data.description,
-            parent_id: data.parent_id,
+            parent_id: data.parent_id ?? 0,
             is_active: data.is_active,
             thumbnail: data.thumbnail
         }
-        return await knex("categories").where("id", categoryId).where("user_id", userId).update(dataNew)
+        return await knex("categories").where("id", categoryId).update(dataNew)
     }
     static async changeStatusCategory({ listId, value }) {
         return await knex('categories').whereIn('id', listId).update({ is_active: value })
-    }
-    static async deleteCategoryByShop({ listId }) {
-        return await knex('categories').whereIn('id', listId).update({ is_delete: 1 })
     }
     static async getCategoryIdByShop({ categoryId }) {
         const category = await knex("categories").where("id", categoryId).first();
@@ -179,5 +175,34 @@ class CategoryRepository {
         const categories = knex.select("*").from("categories").where("is_delete", 0).andWhere("is_active", 2).andWhere("parent_id", "=", categoryId)
         return categories
     }
+    static async getAllCategoryByAdmin({ limit, offset, search, active, sortBy }) {
+        const q = knex("categories")
+            .select("id", "name", "thumbnail", "slug", "description", "created_at", "updated_at", "is_active",
+                knex.raw("(select count(id) from products where category_id = categories.id and is_active = 2 and is_delete = 0) as total_product")
+            ).limit(limit).offset(offset).groupBy("id").orderBy("created_at", "desc")
+        if (search) {
+            q.where("name", "like", `%${search}%`)
+        }
+        if (active !== "all"
+        ) {
+            q.where("is_active", active)
+        } else {
+            q.where("is_active", "!=", 0)
+        }
+        if (sortBy) {
+            q.orderBy("created_at", sortBy)
+        }
+        const categories = await q
+        const totalCate = await knex("categories").count("categories.id as total")
+        return {
+            data: categories,
+            total: totalCate[0]?.total || 0
+        }
+    }
+    static async deleteCategory({ listId }) {
+        return await knex("categories").whereIn("id", listId).del();
+    }
+
+
 }
 module.exports = CategoryRepository

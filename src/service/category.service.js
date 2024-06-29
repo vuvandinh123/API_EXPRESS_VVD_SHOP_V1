@@ -16,8 +16,8 @@ class CategoryService {
     const catgories = await CategoryRepository.getAllCategory();
     return catgories
   }
-  static async getCategoryFilter({categoryId}){
-    const catgories = await CategoryRepository.getCategoryFilter({categoryId});
+  static async getCategoryFilter({ categoryId }) {
+    const catgories = await CategoryRepository.getCategoryFilter({ categoryId });
     return catgories
   }
   static async getCategoryById({ categoryId }) {
@@ -42,31 +42,36 @@ class CategoryService {
     const catgories = await CategoryRepository.getAllCategorySelect({ shopId });
     return catgories
   }
-  static async getCountStatusCategory({ shopId }) {
-    const catgories = await CategoryRepository.getCountStatusCategory({ shopId });
+  static async getCountStatusCategory() {
+    const catgories = await CategoryRepository.getCountStatusCategory();
     return catgories
   }
   static async getAllCategoryAdminSelect() {
     const catgories = await CategoryRepository.getAllCategoryAdminSelect();
     return catgories
   }
-  static async createCategoryByShop(data, userId) {
-    const category = await CategoryRepository.createCategoryByShop(data, userId)
+  static async createCategory(data, userId) {
+    const category = await CategoryRepository.createCategory(data, userId)
     return category
   }
-  static async updateCategoryByShop(categoryId, data, userId) {
-    const category = await CategoryRepository.updateCategoryByShop(categoryId, data, userId)
+  static async updateCategory(categoryId, data) {
+    const category = await CategoryRepository.updateCategory(categoryId, data)
     return category
   }
   static async changeStatusCategory({ listId, value, shopId }) {
     return await CategoryRepository.changeStatusCategory({ listId, value, shopId })
   }
-  static async deleteCategoryByShop({ listId }) {
-    return await CategoryRepository.deleteCategoryByShop({ listId })
+  static async deleteCategory({ listId }) {
+    return await CategoryRepository.deleteCategory({ listId })
   }
   static async getAllCategoryWithParentId({ categoryId }) {
     const catgories = await CategoryRepository.getAllCategoryWithParentId({ categoryId });
     return catgories
   }
+  static async getAllCategoryByAdmin({ limit, offset, search, active, sortBy }) {
+    const catgories = await CategoryRepository.getAllCategoryByAdmin({ limit, offset, search, active, sortBy });
+    return catgories
+  }
+  
 }
 module.exports = CategoryService;

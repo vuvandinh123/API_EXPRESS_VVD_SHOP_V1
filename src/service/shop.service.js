@@ -8,7 +8,8 @@ const NodeCache = require('node-cache');
 const { sendNodemail } = require('../utils');
 const knex = require('../database/database');
 const cache = new NodeCache();
-const bcrypt = require("bcrypt")
+const bcrypt = require("bcrypt");
+const { NotFoundError } = require('../core/error.response');
 
 class ShopService {
 
@@ -22,6 +23,7 @@ class ShopService {
             phone: data.user_phone,
             role_id: 3,
             type_login: "signup",
+            first_login: 1
         }
         const userId = await UserRepository.createUser(newUser)
         const newShop = await ShopRepository.createShop(data, userId[0])
@@ -57,12 +59,15 @@ class ShopService {
     }
 
     // admin
-    static async getAllShopByAdmin() {
-        return await ShopRepository.getAllShopByAdmin()
+    static async getAllShopByAdmin({ limit, offset, search, active, sortBy }) {
+        return await ShopRepository.getAllShopByAdmin({ limit, offset, search, active, sortBy })
+    }
+    static async getShopId(shopId) {
+        return await ShopRepository.getShopId(shopId)
     }
     static async changeStatusShop({ shopId, status }) {
         const res = await ShopRepository.changeStatusShop({ shopId, status })
-        const shop = await knex.from("shops").where("shops.id", shopId)
+        const shop = await knex.from("shops").where("shops.user_id", shopId)
             .join("users", "users.id", "shops.user_id")
             .select("shops.*", "users.email", "users.firstName", "users.lastName")
             .first()
@@ -80,6 +85,21 @@ class ShopService {
             sendNodemail({ email: shop.email, title: "Vu Dinh Shop - TÀI KHOẢN BÁN HÀNG CỦA BẠN ĐĂNG KÝ KHÔNG ĐẠT YÊU CẦU CỦA CHÚNG TÔI", html: "<p>Xin lỗi nhưng cửa hàng của bạn đăng ký không thành công vui lòng liên hệ để biết thêm chi tiết !!</p>" })
         }
 
+    }
+    static async getShopChatsByIds({ shopIds }) {
+        return await ShopRepository.getShopChatsByIds({ shopIds })
+    }
+    static async getCountStatusShop() {
+        return await ShopRepository.getCountStatusShop()
+    }
+    static async changePasswordByShop({ shopId, newPassword }) {
+        const shop = await ShopRepository.getShopId(shopId)
+        if (!shop) throw new NotFoundError("Shop not found")
+        if (shop.first_login === 1) {
+            return 0
+        }
+        const passwordHast = await bcrypt.hash(newPassword, 10)
+        return await ShopRepository.changePasswordByShop({ shopId, newPassword: passwordHast })
     }
 }
 module.exports = ShopService

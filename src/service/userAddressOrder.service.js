@@ -15,5 +15,15 @@ class UserAddressOrderService {
     return address
   }
 
+  static async deleteAddressOrderByUser({ id }) {
+    const address = await UserAddressOrderRepository.deleteAddressByUser({ id });
+    return address
+  }
+
+  static async updateAddressOrderByUser({ id, data }) {
+    const address = await UserAddressOrderRepository.updateAddressByUser({ id, data });
+    return address
+  }
+
 }
 module.exports = UserAddressOrderService;

@@ -10,5 +10,6 @@ const router = express.Router();
 router.use(checkAuthencation)
 router.get('/', asyncHandler(UserAddressOrderController.getAllAddressByUser))
 router.post('/', asyncHandler(UserAddressOrderController.createAddressOrder))
-
+router.put('/:addressId', asyncHandler(UserAddressOrderController.updateAddressOrderByUser))
+router.delete('/:addressId', asyncHandler(UserAddressOrderController.deleteAddressOrderByUser))
 module.exports = router

@@ -23,6 +23,7 @@ class OrderService {
     const { checkout, orders = [] } = data;
     let ids = [];
     let productIds = [];
+    console.log(data,"dete");
     for (const orderData of orders) {
       if (orderData.order.products.length > 0) {
         let totalDiscount = 0;
@@ -83,7 +84,7 @@ class OrderService {
     const shop = await knex("shops").select("shops.*", "provinces.name as province_name").where("shops.user_id", order.shop_id)
       .leftJoin("provinces", "shops.province_id", "provinces.id")
       .first()
-    const { totalDiscount, distCountShipping, orderDetail } = await OrderRepository.getOrderDiscount({ discountId, orderId })
+    const { totalDiscount, distCountShipping, orderDetail } = await OrderRepository.getOrderDiscount({ discountId, orderId, amount: order.amount })
     // truy vấn lấy ra địa chỉ người đặt hàng
     const address_user = await knex("user_address_orders")
       .select("user_address_orders.*", "provinces.name as province_name", "nations.name as nation_name")
@@ -95,19 +96,16 @@ class OrderService {
     // truy vấn lấy ra phí vận chuyển
     const costShipping = await knex("delivery_methods").select("cost").where({ id: deliveryId }).first()
 
-    // tinh tong don hang chưa khuyến mại va phi vân chuyển
-    const amount = order.amount
-
     // tổng đơn hàng đã trừ khuyến mại và phí vận chuyển
-    const total_amount = amount - totalDiscount + (costShipping.cost - distCountShipping)
+    // const total_amount = amount - totalDiscount + (costShipping.cost - distCountShipping)
     const formOrder = {
       request_id: order.id,
       cost: costShipping.cost - distCountShipping,
       shop_name: shop?.name,
       shop_province: shop?.province_name,
       discount: totalDiscount,
-      amount: amount,
-      total_amount: total_amount,
+      amount: order.amount,
+      total_amount: order.total_amount,
       isPaid: order.payment_method === "deliver" ? false : true,
       order_date: moment().format("hh:mm DD-MM-YYYY"),
       payment_method: order.payment_method,
@@ -148,8 +146,8 @@ class OrderService {
   static async getDashboradShop({ shopId }) {
     return await OderRepository.getDashboradShop({ shopId })
   }
-  static async getAllOrderByShop({ shopId, limit, offset }) {
-    return await OrderRepository.getAllOrderByShop({ shopId, limit, offset })
+  static async getAllOrderByShop({ shopId, limit, offset, ...params }) {
+    return await OrderRepository.getAllOrderByShop({ shopId, limit, offset,...params })
   }
   static async getOrderByIdShop({ orderId, shopId }) {
     const res = await OrderRepository.getOrderByIdShop({ orderId, shopId })
@@ -157,7 +155,44 @@ class OrderService {
     return { ...res, products: orderDetail }
   }
   static async updateStatusOrder({ orderId, shopId, status }) {
-    return await OrderRepository.updateStatusOrder({ orderId, shopId, status })
+    const res = await OrderRepository.updateStatusOrder({ orderId, shopId, status })
+    const order = await OrderRepository.getOrderByIdShop({ orderId, shopId })
+
+    if (status === "CANCEL") {
+      const html = `
+    <p>Đơn hàng #${order.id} đã bị hủy</p>
+    <p><a href="http://localhost:5173/user/purchase">XEM ĐƠN HÀNG</a></p>
+    `
+      sendNodemail({ email: order.email, title: "Vu Dinh Shop - ĐƠN HÀNG CỦA BẠN ĐÃ BỊ HỦY", html: html })
+    } else if (status === "CONFIRMED") {
+      const html = `
+      <p>Đơn hàng #${order.id} đã được xác nhận </p>
+      <p><a href="http://localhost:5173/user/purchase">XEM ĐƠN HÀNG</a></p>
+      `
+      sendNodemail({ email: order.email, title: "Vu Dinh Shop - ĐƠN HÀNG CỦA BẠN ĐÃ ĐƯỢC XÁC NHẬN", html: html })
+    }
+    return res;
+  }
+  static async getNewOrderIsPending({ shopId }) {
+    return await OrderRepository.getNewOrderIsPending({ shopId })
+  }
+  static async getAllOrderByAdmin({ limit, offset, status }) {
+    return await OrderRepository.getAllOrderByAdmin({ limit, offset, status })
+  }
+  static async getOrderIdAdmin({ orderId }) {
+    return await OrderRepository.getOrderIdAdmin({ orderId })
+  }
+  static async changeStatusOrderAdmin({ orderId, status }) {
+    return await OrderRepository.changeStatusOrderAdmin({ orderId, status })
+  }
+  static async getCountStatusOrderAdmin() {
+    return await OrderRepository.getCountStatusOrder()
+  }
+  static async getCountStatusOrderShop({ userId }) {
+    return await OrderRepository.getCountStatusOrderShop({ userId })
+  }
+  static async getDashboradAdmin({ userId }) {
+    return await OrderRepository.getDashboradAdmin({ userId })
   }
 }
 module.exports = OrderService;

@@ -116,7 +116,8 @@ class AccessService {
                 email,
                 firstName: user.firstName,
                 lastName: user.lastName,
-                email_verified: user.email_verified
+                email_verified: user.email_verified,
+                first_login: user.first_login
             },
             token
         }

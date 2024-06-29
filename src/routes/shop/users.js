@@ -2,10 +2,8 @@
 
 const express = require('express');
 const asyncHandler = require('../../middlewares/asyncHandle');
-const UserFollowController = require('../../controllers/userFollow.controller');
 const UserController = require('../../controllers/user.controller');
-
 const router = express.Router();
-router.get('/stats', asyncHandler(UserFollowController.countUserFollowShopStats))
-
-module.exports = router
+router.post('/chats', asyncHandler(UserController.getChatsUserShop))
+router.get('/:id', asyncHandler(UserController.getUserChatById))
+module.exports = router 

@@ -149,10 +149,17 @@ class OrderController {
             data: order
         }).send(res)
     }
-
+    static async getCountStatusOrderShop(req, res) {
+        const order = await OrderService.getCountStatusOrderShop({ userId: req.user.id })
+        new OK({
+            message: "Get all orders successfully",
+            data: order
+        }).send(res)
+    }
     static async getAllOrderByShop(req, res) {
         const { page, limit, offset } = getParamsPagination(req);
-        const { data, total } = await OrderService.getAllOrderByShop({ shopId: req.user.id, limit, offset })
+        const { status } = req.query
+        const { data, total } = await OrderService.getAllOrderByShop({ shopId: req.user.id, limit, offset,status })
 
         const options = {
             total: total,
@@ -182,6 +189,61 @@ class OrderController {
         const order = await OrderService.updateStatusOrder({ orderId, shopId: req.user.id, status })
         new OK({
             message: "Update order successfully",
+            data: order
+        }).send(res)
+    }
+    static async getNewOrderIsPending(req, res) {
+        const order = await OrderService.getNewOrderIsPending({ shopId: req.user.id })
+        new OK({
+            message: "Get all orders successfully",
+            data: order
+        }).send(res)
+    }
+    static async getAllOrderByAdmin(req, res) {
+        const { page, limit, offset } = getParamsPagination(req);
+        const { status } = req.query
+        const { data, total } = await OrderService.getAllOrderByAdmin({ limit, offset, status })
+        const options = {
+            total: total,
+            pagination: {
+                totalPage: Math.ceil(total / limit),
+                page,
+                limit
+            }
+        };
+        new OK({
+            message: "Get all orders successfully",
+            data: data,
+            options
+        }).send(res)
+    }
+    static async getOrderIdAdmin(req, res) {
+        const orderId = req.params.orderId
+        const order = await OrderService.getOrderIdAdmin({ orderId })
+        new OK({
+            message: "Get order successfully",
+            data: order
+        }).send(res)
+    }
+    static async changeStatusOrderAdmin(req, res) {
+        const { orderId, status } = req.body
+        const order = await OrderService.changeStatusOrderAdmin({ orderId, status })
+        new OK({
+            message: "Update order successfully",
+            data: order
+        }).send(res)
+    }
+    static async getCountStatusOrderAdmin(req, res) {
+        const count = await OrderService.getCountStatusOrderAdmin()
+        new OK({
+            message: "Get count status order successfully",
+            data: count
+        }).send(res)
+    }
+    static async getDashboradAdmin(req, res) {
+        const order = await OrderService.getDashboradAdmin({ userId: req.user.id })
+        new OK({
+            message: "Get all orders successfully",
             data: order
         }).send(res)
     }

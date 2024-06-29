@@ -30,7 +30,7 @@ const getParamsPagination = (req) => {
 const authLogin = async ({ user, refreshToken }) => {
     const { privateKey, publicKey } = createPrivateKeyAndPublicKey()
     const role = await RoleRepository.getRoleById(user.role_id)
-    const token = await createTokenPeir({ id: user.id, email: user.email, role: role.name }, publicKey, privateKey, refreshToken)
+    const token = await createTokenPeir({ id: user.id, email: user.email, role: role.name, first_login: user.first_login }, publicKey, privateKey, refreshToken)
     // add key publickey and privatekey to database
     const isTokenKey = await KeyTokenService.findKeyTokenByUserId(user.id)
     const objKey = {

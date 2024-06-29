@@ -175,7 +175,7 @@ class ProductController {
         }).send(res)
     }
     static async getInventory(req, res) {
-        const inventory = await ProductService.getInventory(req.user)
+        const inventory = await ProductService.getInventory({ shopId: req.user.id })
         new OK({
             message: "Get inventory successfully",
             data: inventory
@@ -289,8 +289,57 @@ class ProductController {
     // create is shop
 
     /**
-     * ROLE -----> USER
+     * ROLE -----> ADMIN
      */
+
+    static async getAllProductsByAdmin(req, res) {
+        const { limit, offset } = getParamsProduct(req);
+
+        const {
+            filter,
+            search,
+            min,
+            max,
+            active,
+            sortBy,
+            categoryId
+        } = req.query;
+
+        // Construct price object
+        const price = { min, max };
+
+        // Retrieve products from service
+        const { data, total } = await ProductService.getAllProductsByAdmin({
+            limit,
+            offset,
+            categoryId,
+            filter,
+            price,
+            sortBy,
+            active,
+            search
+        }, req.user);
+
+        // Calculate total number of pages
+        const totalPage = Math.ceil(total / limit);
+
+        // Construct options object
+        const options = {
+            countProduct: total,
+            pagination: {
+                totalPage,
+                page: req.query.page,
+                limit
+            }
+        };
+
+        // Send success response
+        new OK({
+            message: "Get products successfully",
+            data,
+            options
+        }).send(res);
+    }
 
 
 }

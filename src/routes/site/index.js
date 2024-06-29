@@ -18,6 +18,9 @@ router.use('/orders', require('./order'))
 router.use('/user', require('./user'))
 router.use('/categories', require('./category'))
 router.use('/auth', require('./access'))
+router.use('/comments', require('./comment'))
+router.use('/upload', require('./upload'))
+
 
 
 

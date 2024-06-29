@@ -14,12 +14,7 @@ router.get('/with-parent/:categoryId', asyncHandler(CategoryController.getAllCat
 router.get('/:categoryId', asyncHandler(CategoryController.getCategoryIdByShop))
 
 // post
-router.post('/', asyncHandler(CategoryController.createCategoryByShop))
 // put
 router.put('/:categoryId', asyncHandler(CategoryController.updateCategoryByShop))
 
-// patch
-router.patch('/change-status', asyncHandler(CategoryController.changeStatusCategory))
-// delete
-router.patch('/del', asyncHandler(CategoryController.deleteCategoryByShop))
 module.exports = router

@@ -7,5 +7,7 @@ const router = express.Router();
 
 router.get('/', asyncHandler(ShopController.getAllShopByAdmin))
 router.patch('/change-status', asyncHandler(ShopController.changeStatusShop))
+router.get('/count-status', asyncHandler(ShopController.getCountStatusShop))
+router.get('/:userId', asyncHandler(ShopController.getShopByUserId))
 
 module.exports = router

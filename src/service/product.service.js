@@ -121,8 +121,8 @@ class ProductService {
     return product;
   }
   // Lấy tất cả variant 
-  static async getInventory() {
-    let query = firebase.collection("variant")
+  static async getInventory({ shopId }) {
+    let query = firebase.collection("variant").where("shopId", "==", shopId);
     const querySnapshot = await query.get();
     const variants = [];
 
@@ -254,7 +254,15 @@ class ProductService {
         await newDocRef.set(product.variant);
       }
     }
-
+    const shop_cate = await knex("shop_categories")
+      .where("shop_id", user.id)
+      .where("category_id", product.categoryId).first();
+    if (!shop_cate) {
+      await knex("shop_categories").insert({
+        shop_id: user.id,
+        category_id: product.categoryId
+      })
+    }
     return newProduct;
   }
   static async deleteProducts(id, user) {
@@ -282,6 +290,10 @@ class ProductService {
 
   static async getAllProductAndVariant({ shopId, search, }) {
     const products = await ProductRepository.getAllProductAndVariant({ shopId, search })
+    return products
+  }
+  static async getAllProductsByAdmin({ limit, offset, categoryId, filter, price, sortBy, active, search }) {
+    const products = await ProductRepository.getAllProductsByAdmin({ limit, offset, categoryId, filter, price, sortBy, active, search })
     return products
   }
 }

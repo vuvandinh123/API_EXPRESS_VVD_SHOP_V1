@@ -17,8 +17,10 @@ router.use('/images', require('./image.js'))
 router.use('/discount', require('./discount.js'))
 router.use('/promotions', require('./promotion.js'))
 router.use('/shops', require('./shop.js'))
+router.use('/follows', require('./follow.js'))
 router.use('/orders', require("./order.js"))
 router.use('/follows', require("./userFollow.js"))
+router.use('/users', require("./users.js"))
 
 
 

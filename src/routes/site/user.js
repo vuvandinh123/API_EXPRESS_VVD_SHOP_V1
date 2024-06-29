@@ -8,6 +8,6 @@ const router = express.Router();
 router.use(checkAuthencation)
 router.get('/', asyncHandler(UserController.getUserByIdEdit))
 router.put('/', asyncHandler(UserController.updateUser))
-
+router.patch('/change-password', asyncHandler(UserController.changePassword))
 
 module.exports = router
