@@ -27,8 +27,8 @@ class UserRepository {
         return await knex.from("users").where("id", userId).update(userUpdate)
     }
     // create email
-    static async createUser({ firstName, lastName, email, password, image, type_login = "signup", email_verified = 0, role_id = 1, is_active = 1 }) {
-        return await knex("users").insert({ firstName, lastName, email, type_login, password, role_id, image, email_verified, is_active, created_at: new Date() })
+    static async createUser({ firstName, lastName, email, password, image, type_login = "signup", email_verified = 0, role_id = 1, is_active = 1, first_login }) {
+        return await knex("users").insert({ firstName, lastName, email, type_login, password, role_id, image, email_verified, is_active, created_at: new Date(), first_login })
     }
     static async checkRoleUserId(userId) {
         const user = await knex.from("users").select("users.id", "users.email", "users.firstName", "users.lastName", "roles.name as role", "roles.permissions").join("roles", "users.role_id", "roles.id").where("users.id", userId).first()

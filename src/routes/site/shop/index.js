@@ -12,4 +12,6 @@ router.use(checkAuthencation)
 router.get('/is-follow/:shopId', asyncHandler(ShopController.getIsFollowShop))
 router.post('/chats', asyncHandler(ShopController.getShopChatsByIds))
 router.patch('/follow/:shopId', asyncHandler(ShopController.toggleFollowShop))
+router.get('/find-id/:userId', asyncHandler(ShopController.getShopByUserId))
+
 module.exports = router

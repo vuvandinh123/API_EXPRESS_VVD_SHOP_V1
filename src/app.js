@@ -1,16 +1,11 @@
 "use strict"
-
 const compression = require('compression');
 const express = require('express');
 const { default: helmet } = require('helmet');
 const app = express();
 const morgan = require('morgan');
-const firebase = require("./configs/firebase.config")
-
 // cloudinary 
 const cloudinaryConfig = require('./configs/cloudinary.config');
-
-// config db firebase
 
 // init middlewares
 app.use(morgan('dev'))
@@ -25,6 +20,7 @@ const allowedOrigins = ['http://localhost:3000', 'http://localhost:5173'];
 app.use(cors({
     origin: allowedOrigins
 }));
+
 // router
 app.use('/v1/', require('./routes'))
 

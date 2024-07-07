@@ -93,11 +93,13 @@ class ProductService {
     return product;
   }
   static async getProductById(id) {
+    console.log("hj", id);
     const [product, spec, variantDoc] = await Promise.all([
       ProductRepository.findProductById(id),
       SpecService.getSpecByProductId(id),
       firebase.collection("variant").doc(id).get()
     ]);
+
     if (!product) {
       throw new NotFoundError("Product not found")
     }
@@ -105,6 +107,8 @@ class ProductService {
     if (spec) {
       product.spec = spec
     }
+    console.log("hj2", variantDoc);
+
     if (variantDoc.exists) {
       try {
         const variantData = variantDoc.data();

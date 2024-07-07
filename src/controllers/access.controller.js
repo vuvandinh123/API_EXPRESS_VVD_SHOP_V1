@@ -11,15 +11,9 @@ class AccessController {
             data
         }).send(res)
     }
+    
     static signIn = async (req, res) => {
-        const data = await AccessService.signInByShop(req.body)
-        return new OK({
-            message: "Sign in successfully",
-            data
-        }).send(res)
-    }
-    static signInByUser = async (req, res) => {
-        const data = await AccessService.signInByUser(req.body)
+        const data = await AccessService.signIn(req.body)
         return new OK({
             message: "Sign in successfully",
             data

@@ -68,7 +68,6 @@ const checkAuthencation = asyncHandler(async (req, res, next) => {
         // Add the key token, decoded user and refresh token to the request object
         req.keyStore = keyToken;
         req.user = decodedUser;
-        console.log(decodedUser, "decodedUser");
         return next();
     } catch (e) {
         if (e instanceof JWT.TokenExpiredError) {

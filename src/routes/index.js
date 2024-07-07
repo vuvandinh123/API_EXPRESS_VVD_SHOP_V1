@@ -12,8 +12,9 @@ const router = express.Router();
 router.get('/momo', checkPayment, asyncHandler(OrderController.paymentOrderWithMoMo))
 router.get('/momo/ipn', asyncHandler(OrderController.checkPaymentMomo))
 
-router.use(checkApiKey)
-router.use(checkPermission("0000"))
+// router.use(checkApiKey)
+// router.use(checkPermission("0000"))
+router.use('/api/auth/', require('./common/auth.js'))
 router.use('/api/shop/', require('./shop'))
 router.use('/api/admin/', require('./admin'))
 router.use('/api/', require('./site'))

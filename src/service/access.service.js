@@ -10,41 +10,24 @@ const nodemailer = require('nodemailer');
 const { renderVerifyEmail, renderVerifyEmailLink } = require("../utils/VerifyEmail")
 const NodeCache = require('node-cache');
 const cache = new NodeCache();
-/**
- * Access service
- * 1. Sign up
- * 2. Sign in
- * 3. Refresh token
- * 4. Log out
- */
 class AccessService {
 
     /**
-     * Sign up
-     * 1. Check email exist
-     * 2. Hash password
-     * 3. Create user
-     * 4. Create key
-     * 5. Create token to database
-     * 6. Return user,token
+     * access service
+     * 1. đăng ký
+     * 2. Đăng nhập
+     * 3. refresh token
+     * 4. Đăng xuất
+     * 5. Gửi mail xác nhận
+     * 6. Quên mật khẩu
      */
-    static signUp = async ({ firstName, lastName, email, password, role_id }, user) => {
-        let role_id_use = 1;
-        if (role_id && role_id !== 1) {
-            if (user) {
-                const userAdmin = await UserRepository.findUserByEmail(user.email)
-                if (userAdmin.role_id === 2) {
-                    role_id_use = role_id
-                }
-            }
-        }
+    static signUp = async ({ firstName, lastName, email, password }) => {
         const isEmailExist = await UserRepository.findUserByEmail(email)
         if (isEmailExist) {
             throw new BadRequestError("Email already exist")
         }
         const passwordHast = await bcrypt.hash(password, 10)
-
-        const newUser = await UserRepository.createUser({ firstName, lastName, email, password: passwordHast, role_id: role_id_use })
+        const newUser = await UserRepository.createUser({ firstName, lastName, email, password: passwordHast, role_id: 1 })
         if (!newUser) {
             throw new BadRequestError("Failed to create user")
         }
@@ -71,36 +54,8 @@ class AccessService {
             token
         }
     }
-    /**
-     * Sign in
-     * 1. Check email exist
-     * 2. Check password
-     * 3. Create token
-     * 4. Check keytoken in database
-     * 5. Return user,token
-     */
-    static signInByShop = async ({ email, password, refreshToken = null }) => {
-        const user = await UserRepository.findUserByEmail(email)
-        if (!user) {
-            throw new BadRequestError("Email not found")
-        }
-        const isMatch = await bcrypt.compare(password, user.password)
-        if (!isMatch) {
-            throw new BadRequestError("Password not match")
-        }
-        const token = await authLogin({ user, password, refreshToken })
-        return {
-            user: {
-                id: user.id,
-                email,
-                firstName: user.firstName,
-                lastName: user.lastName
-            },
-            token
-        }
-
-    }
-    static signInByUser = async ({ email, password, refreshToken = null }) => {
+    // Sign in
+    static signIn = async ({ email, password, refreshToken = null }) => {
         const user = await UserRepository.findUserByEmail(email)
         if (!user) {
             throw new BadRequestError("Email not found")
@@ -122,14 +77,7 @@ class AccessService {
             token
         }
     }
-    /**
-     * Refresh token
-     * 1. Check refresh token === refresh token in database
-     * 2. Check user
-     * 3. Create new token
-     * 4. Update token in database
-     * 5. Return user,token
-     */
+    // Refresh token
     static refreshToken = async ({ keyStore, refreshToken, user }) => {
         const { id, email } = user;
         if (keyStore.refresh_token !== refreshToken) throw new AuthFailureError("User is not authenticated")
@@ -172,8 +120,6 @@ class AccessService {
         const code = Math.random().toString(6).substring(2, 8)
         const codeExpiration = 60; // 60 giây
         const codeStartDateTime = new Date();
-
-
         cache.set(req.user.email, code, 60);
         sendNodemail({ email: req.user.email, title: "Vu Dinh Shop - Verify email", html: renderVerifyEmail(code) })
         return {
